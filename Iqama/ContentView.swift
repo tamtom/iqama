@@ -423,6 +423,10 @@ struct ContentView: View {
 private struct PulsingDot: View {
     var color: Color
     @State private var on = false
+    // A `repeatForever` animation keeps the render server busy indefinitely, even
+    // when the window is backgrounded. Gate it on the window's active state so it
+    // settles to a static dot the moment the window loses focus.
+    @Environment(\.controlActiveState) private var controlActiveState
 
     var body: some View {
         Circle()
@@ -430,11 +434,23 @@ private struct PulsingDot: View {
             .frame(width: 6, height: 6)
             .shadow(color: color.opacity(0.8), radius: on ? 6 : 2)
             .opacity(on ? 1.0 : 0.65)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
-                    on.toggle()
-                }
+            .onAppear { setPulsing(controlActiveState != .inactive) }
+            .onChange(of: controlActiveState) { _, state in
+                setPulsing(state != .inactive)
             }
+    }
+
+    private func setPulsing(_ active: Bool) {
+        if active {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
+                on = true
+            }
+        } else {
+            // A finite animation here replaces the repeating one, letting it stop.
+            withAnimation(.easeInOut(duration: 0.3)) {
+                on = false
+            }
+        }
     }
 }
 

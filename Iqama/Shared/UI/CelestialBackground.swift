@@ -12,10 +12,15 @@ struct CelestialBackground: View {
     var bodyNormalizedX: Double = 0.5
     var bodyIsDay: Bool = true
 
+    // Pauses the per-second sky refresh when the window is neither key nor
+    // active (backgrounded / occluded), so a non-focused window renders a
+    // single static frame at 0 fps instead of recompositing every second.
+    @Environment(\.controlActiveState) private var controlActiveState
+
     var body: some View {
         if let timeOverride {
             content(at: timeOverride)
-        } else if animateOverTime {
+        } else if animateOverTime && controlActiveState != .inactive {
             TimelineView(.periodic(from: .now, by: 1.0)) { ctx in
                 content(at: ctx.date)
             }
@@ -51,11 +56,16 @@ struct CelestialBackground: View {
                 .blendMode(.overlay)
                 .allowsHitTesting(false)
 
-            // Drifting starlight at night.
+            // Drifting starlight at night. Only mount the animated canvas when
+            // it would actually be visible — a fully transparent StarField still
+            // runs its render loop for nothing.
             if Theme.isNight(at: date) {
-                StarField(seed: 1)
-                    .opacity(starsOpacity(at: date))
-                    .allowsHitTesting(false)
+                let stars = starsOpacity(at: date)
+                if stars > 0 {
+                    StarField(seed: 1)
+                        .opacity(stars)
+                        .allowsHitTesting(false)
+                }
             }
 
             // Bottom-up vignette — keeps content area dark enough for white
@@ -102,8 +112,16 @@ struct StarField: View {
     var seed: UInt64 = 1
     var count: Int = 60
 
+    // Freeze the twinkle when the window isn't focused/active. Without this the
+    // `.animation` schedule keeps firing whether or not the window is visible —
+    // the single biggest source of the app's background energy drain.
+    @Environment(\.controlActiveState) private var controlActiveState
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { ctx in
+        // 4 fps is visually indistinguishable from 30 for a slow drift/twinkle
+        // (star motion has a multi-second period) but uses ~8× less power.
+        TimelineView(.animation(minimumInterval: 1.0 / 4.0,
+                                paused: controlActiveState == .inactive)) { ctx in
             let phase = ctx.date.timeIntervalSinceReferenceDate
             Canvas { gc, size in
                 var rng = SplitMix64(state: seed)
