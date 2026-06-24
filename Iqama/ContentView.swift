@@ -7,9 +7,14 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var countdownManager = CountdownManager.shared
-    @StateObject private var updateChecker = UpdateChecker.shared
     @ObservedObject private var checkIn = NotificationManager.shared
+    #if os(macOS)
+    @StateObject private var updateChecker = UpdateChecker.shared
     @Environment(\.openSettings) private var openSettings
+    #else
+    // iOS has no Settings scene / menu bar — present settings as a sheet instead.
+    @State private var showSettings = false
+    #endif
 
     @AppStorage(AppSettings.Keys.locationConfirmed, store: AppSettings.shared)
     private var locationConfirmed = false
@@ -35,6 +40,7 @@ struct ContentView: View {
             let body = SkyGeometry.bodyNormalized(at: now, sunrise: sunrise, sunset: sunset)
 
             ZStack {
+                #if os(macOS)
                 // 1. Window-level wallpaper blur (the macOS Tahoe glass).
                 WindowBackdrop(material: .hudWindow)
                     .ignoresSafeArea()
@@ -53,12 +59,25 @@ struct ContentView: View {
                 // 3. AppKit interop: make the host NSWindow transparent.
                 WindowTransparencyConfigurator()
                     .frame(width: 0, height: 0)
+                #else
+                // iOS has no desktop wallpaper to blur — paint the celestial sky
+                // straight onto a dark base so it reads fully on its own.
+                Color.black.ignoresSafeArea()
+                CelestialBackground(
+                    timeOverride: nil,
+                    bodyNormalizedX: body.x,
+                    bodyIsDay: body.isDay
+                )
+                .ignoresSafeArea()
+                #endif
 
                 ScrollView {
                     VStack(spacing: 18) {
+                        #if os(macOS)
                         if let update = updateChecker.availableUpdate {
                             UpdateBanner(update: update)
                         }
+                        #endif
 
                         header
 
@@ -80,14 +99,20 @@ struct ContentView: View {
                         footer
                     }
                     .padding(.horizontal, 32)
+                    #if os(macOS)
                     .padding(.top, 60)           // clear the macOS 26 window controls
+                    #else
+                    .padding(.top, 12)           // safe area handles the notch on iOS
+                    #endif
                     .padding(.bottom, 24)
                     .frame(maxWidth: .infinity)
                 }
                 .scrollIndicators(.hidden)
             }
         }
+        #if os(macOS)
         .frame(minWidth: 460, minHeight: 420)
+        #endif
         .preferredColorScheme(.dark)
         .onAppear {
             countdownManager.refresh()
@@ -106,6 +131,20 @@ struct ContentView: View {
         .sheet(isPresented: $showCheckInSetup) {
             CheckInSetupView()
         }
+        #if os(iOS)
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsView()
+                    .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showSettings = false }
+                        }
+                    }
+            }
+        }
+        #endif
     }
 
     // MARK: - Header
@@ -402,7 +441,11 @@ struct ContentView: View {
             Spacer()
 
             Button {
+                #if os(macOS)
                 openSettings()
+                #else
+                showSettings = true
+                #endif
             } label: {
                 Label("Settings", systemImage: "gearshape")
                     .font(.caption)
@@ -424,9 +467,15 @@ private struct PulsingDot: View {
     var color: Color
     @State private var on = false
     // A `repeatForever` animation keeps the render server busy indefinitely, even
-    // when the window is backgrounded. Gate it on the window's active state so it
-    // settles to a static dot the moment the window loses focus.
+    // when the window is backgrounded. Gate it on the active state so it settles to
+    // a static dot the moment the window loses focus (macOS) / the app backgrounds (iOS).
+    #if os(macOS)
     @Environment(\.controlActiveState) private var controlActiveState
+    private var isActive: Bool { controlActiveState != .inactive }
+    #else
+    @Environment(\.scenePhase) private var scenePhase
+    private var isActive: Bool { scenePhase == .active }
+    #endif
 
     var body: some View {
         Circle()
@@ -434,10 +483,12 @@ private struct PulsingDot: View {
             .frame(width: 6, height: 6)
             .shadow(color: color.opacity(0.8), radius: on ? 6 : 2)
             .opacity(on ? 1.0 : 0.65)
-            .onAppear { setPulsing(controlActiveState != .inactive) }
-            .onChange(of: controlActiveState) { _, state in
-                setPulsing(state != .inactive)
-            }
+            .onAppear { setPulsing(isActive) }
+            #if os(macOS)
+            .onChange(of: controlActiveState) { _, state in setPulsing(state != .inactive) }
+            #else
+            .onChange(of: scenePhase) { _, phase in setPulsing(phase == .active) }
+            #endif
     }
 
     private func setPulsing(_ active: Bool) {
@@ -454,6 +505,7 @@ private struct PulsingDot: View {
     }
 }
 
+#if os(macOS)
 // Slim banner shown at the top of the window when a newer release exists on
 // GitHub. "Update" downloads the DMG, verifies it, swaps the app bundle, and
 // relaunches — all in-app.
@@ -528,6 +580,7 @@ struct UpdateBanner: View {
         return "Update"
     }
 }
+#endif
 
 #Preview {
     ContentView()

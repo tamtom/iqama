@@ -48,9 +48,17 @@ class CountdownManager: ObservableObject {
 
             // Pre-iqama reminder + "did you pray?" nag loop
             NotificationManager.shared.tick(snapshot: newState)
+
+            #if os(iOS)
+            // Keep the Lock Screen / Dynamic Island countdown in sync (no-op if disabled).
+            LiveActivityController.shared.sync(with: newState)
+            #endif
         } catch {
             self.error = error
             currentState = nil
+            #if os(iOS)
+            LiveActivityController.shared.end()
+            #endif
         }
     }
 

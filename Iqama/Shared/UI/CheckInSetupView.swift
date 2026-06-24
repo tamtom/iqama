@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 import UserNotifications
 
 /// Onboarding for Prayer Check-in: explains the "did you pray?" loop, surfaces the notification
@@ -53,10 +52,12 @@ struct CheckInSetupView: View {
             }
         }
         .padding(24)
+        #if os(macOS)
         .frame(width: 470)
+        #endif
         .onAppear { refreshNotificationStatus() }
         // Coming back from System Settings → re-check permission/style.
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: PlatformSupport.didBecomeActiveNotification)) { _ in
             refreshNotificationStatus()
         }
     }
@@ -108,7 +109,7 @@ struct CheckInSetupView: View {
                     } else {
                         Label("Notifications disappear after a few seconds", systemImage: "exclamationmark.circle.fill")
                             .foregroundStyle(.orange)
-                        Text("macOS can't let apps change this themselves. One quick switch — set Alert Style to “Persistent” so check-ins stay on screen until you answer:")
+                        Text("The system can't let apps change this themselves. One quick switch — set the alert/banner style to “Persistent” so check-ins stay on screen until you answer:")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -172,7 +173,7 @@ struct CheckInSetupView: View {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .quaternarySystemFill))
+                    .fill(Color.platformQuaternaryFill)
             )
             Label("choose this", systemImage: "arrow.up")
                 .font(.caption2)
@@ -243,13 +244,9 @@ struct CheckInSetupView: View {
         }
     }
 
-    /// Open System Settings → Notifications directly on Iqama's own page (the `?id=` deep link),
-    /// falling back to the general Notifications pane.
+    /// Open this app's notification settings (macOS System Settings → Notifications for Iqama;
+    /// iOS Settings → Iqama).
     static func openNotificationSettings() {
-        let pane = "x-apple.systempreferences:com.apple.Notifications-Settings.extension"
-        let bundleID = Bundle.main.bundleIdentifier ?? ""
-        if let url = URL(string: bundleID.isEmpty ? pane : "\(pane)?id=\(bundleID)") {
-            NSWorkspace.shared.open(url)
-        }
+        PlatformSupport.openAppNotificationSettings()
     }
 }

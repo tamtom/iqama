@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import AppKit
 import Combine
@@ -233,3 +234,4 @@ final class UpdateInstaller: ObservableObject {
         var errorDescription: String? { msg }
     }
 }
+#endif

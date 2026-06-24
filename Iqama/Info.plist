@@ -28,5 +28,11 @@
 	<string>Iqama uses your location to show accurate prayer times for where you are — your nearest emirate in the UAE, or your city elsewhere.</string>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>alert</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>

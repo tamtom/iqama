@@ -1,0 +1,1 @@
+../Iqama/Shared/Models/PrayerActivityAttributes.swift

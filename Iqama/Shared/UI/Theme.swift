@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // Time-of-day sky palette. Colors are picked so the gradient is always
 // readable (text contrast preserved) across the full 24-hour cycle.
@@ -90,6 +93,10 @@ private extension Color {
         #if canImport(AppKit)
         let n = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(self)
         return (Double(n.redComponent), Double(n.greenComponent), Double(n.blueComponent), Double(n.alphaComponent))
+        #elseif canImport(UIKit)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (Double(r), Double(g), Double(b), Double(a))
         #else
         return (0, 0, 0, 1)
         #endif

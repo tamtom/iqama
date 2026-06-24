@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 
 /// One-time self-migration of the on-disk app filename. Older builds shipped as
@@ -62,3 +63,4 @@ enum AppRelocator {
         return true
     }
 }
+#endif

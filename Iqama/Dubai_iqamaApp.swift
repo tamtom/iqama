@@ -7,12 +7,22 @@
 
 import SwiftUI
 import WidgetKit
+#if canImport(AppKit)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 @main
 struct Dubai_iqamaApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(MacAppDelegate.self) var appDelegate
+    #elseif os(iOS)
+    @UIApplicationDelegateAdaptor(IOSAppDelegate.self) var appDelegate
+    #endif
 
     var body: some Scene {
+        #if os(macOS)
         WindowGroup {
             ContentView()
         }
@@ -23,10 +33,35 @@ struct Dubai_iqamaApp: App {
         Settings {
             SettingsView()
         }
+        #else
+        WindowGroup {
+            ContentView()
+        }
+        #endif
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+/// Startup work shared by both platforms: notification permission, preload the current
+/// month so the first paint isn't blank, resolve the location, fetch non-UAE data, and
+/// refresh widget timelines.
+@MainActor
+enum AppBootstrap {
+    static func performCommonStartup() {
+        NotificationManager.shared.requestPermission()
+
+        let currentMonth = Calendar.current.component(.month, from: Date())
+        PrayerTimesService.shared.preloadMonth(currentMonth)
+
+        LocationManager.shared.resolveIfAuto()
+        AladhanSync.shared.syncIfNeeded()
+
+        // Force the widget extension to refresh timelines with the latest design / data.
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+}
+
+#if os(macOS)
+final class MacAppDelegate: NSObject, NSApplicationDelegate {
     var statusBarController: StatusBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -34,28 +69,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // the app quits and relaunches from the new path, so skip the rest of startup.
         if AppRelocator.migrateIfNeeded() { return }
 
-        // Initialize status bar
+        // Initialize status bar (macOS-only — no menu bar on iOS).
         statusBarController = StatusBarController()
 
-        // Request notification permission
-        NotificationManager.shared.requestPermission()
+        AppBootstrap.performCommonStartup()
 
-        // Preload current month so the first paint isn't blank (uses the stored location,
-        // defaulting to Dubai), then auto-detect to refine it.
-        let currentMonth = Calendar.current.component(.month, from: Date())
-        PrayerTimesService.shared.preloadMonth(currentMonth)
-
-        // Resolve the user's location (auto mode) and, if outside the UAE, fetch + cache Aladhan
-        // data. Both refresh the countdown + widgets when they complete.
-        LocationManager.shared.resolveIfAuto()
-        AladhanSync.shared.syncIfNeeded()
-
-        // Force the widget extension to refresh timelines with the latest
-        // design / data. Without this, widgets keep showing stale entries
-        // from before the app was last updated.
-        WidgetCenter.shared.reloadAllTimelines()
-
-        // Check GitHub for a newer release now and once per day.
+        // Check GitHub for a newer release now and once per day (macOS distributes outside the
+        // App Store; on iOS the App Store handles updates).
         UpdateChecker.shared.start()
     }
 
@@ -63,3 +83,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Cleanup if needed
     }
 }
+#elseif os(iOS)
+final class IOSAppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        AppBootstrap.performCommonStartup()
+        return true
+    }
+}
+#endif

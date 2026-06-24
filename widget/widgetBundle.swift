@@ -12,5 +12,9 @@ import SwiftUI
 struct PrayerWidgetBundle: WidgetBundle {
     var body: some Widget {
         PrayerWidget()
+        #if os(iOS)
+        // Lock Screen + Dynamic Island prayer countdown (iOS only).
+        PrayerLiveActivity()
+        #endif
     }
 }

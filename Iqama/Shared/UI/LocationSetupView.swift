@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 import CoreLocation
 
 /// First-run location flow: ask permission → show what was detected → let the user confirm it or
@@ -53,7 +52,9 @@ struct LocationSetupView: View {
             }
         }
         .padding(24)
+        #if os(macOS)
         .frame(width: 460)
+        #endif
         .interactiveDismissDisabled(true)
     }
 
@@ -62,8 +63,7 @@ struct LocationSetupView: View {
     private var autoCard: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 10) {
-                switch location.authorizationStatus {
-                case .authorized, .authorizedAlways:
+                if location.authorizationStatus.grantsLocation {
                     if location.isResolving {
                         HStack(spacing: 8) {
                             ProgressView().controlSize(.small)
@@ -74,14 +74,14 @@ struct LocationSetupView: View {
                             .foregroundStyle(.green)
                     }
                     Button("Update location") { location.beginResolve() }
-                case .denied, .restricted:
+                } else if location.authorizationStatus == .denied || location.authorizationStatus == .restricted {
                     Label("Location access is off", systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
                     Text("Turn it on to auto-detect your location, or choose it manually below.")
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button("Open Location Settings…") { Self.openLocationSettings() }
-                default:
+                } else {
                     Text("Detect your nearest emirate (in the UAE) or your city automatically.")
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -135,10 +135,8 @@ struct LocationSetupView: View {
         dismiss()
     }
 
-    /// Open System Settings → Privacy & Security → Location Services directly.
+    /// Open the system Location settings (macOS Privacy pane; iOS app settings page).
     static func openLocationSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices") {
-            NSWorkspace.shared.open(url)
-        }
+        PlatformSupport.openLocationSettings()
     }
 }

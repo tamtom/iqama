@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 struct StatusBarMenuView: View {
@@ -201,3 +202,4 @@ struct StatusBarMenuView: View {
     StatusBarMenuView()
         .frame(width: 300, height: 460)
 }
+#endif

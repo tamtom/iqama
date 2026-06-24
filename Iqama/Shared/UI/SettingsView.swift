@@ -78,10 +78,12 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        #if os(macOS)
         // Flexible height: a fixed frame taller than the (persisted) window clips the bottom
         // sections with no way to scroll. This keeps the form scrollable + the window resizable.
         .frame(width: 500)
         .frame(minHeight: 420, idealHeight: 620, maxHeight: .infinity)
+        #endif
         .navigationTitle("Iqama")
     }
 

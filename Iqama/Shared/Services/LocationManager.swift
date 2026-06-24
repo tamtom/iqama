@@ -30,25 +30,20 @@ final class LocationManager: NSObject, ObservableObject {
     /// controls when it appears. We only refresh silently if permission is already granted.
     func resolveIfAuto() {
         guard AppSettings.locationMode == .auto else { return }
-        switch manager.authorizationStatus {
-        case .authorized, .authorizedAlways:
-            beginResolve()
-        default:
-            break
-        }
+        if manager.authorizationStatus.grantsLocation { beginResolve() }
     }
 
     func beginResolve() {
         isResolving = true
-        switch manager.authorizationStatus {
-        case .notDetermined:
+        let status = manager.authorizationStatus
+        if status == .notDetermined {
             manager.requestWhenInUseAuthorization()      // delegate will request location on grant
-        case .authorized, .authorizedAlways:
+        } else if status.grantsLocation {
             manager.requestLocation()
-        case .denied, .restricted:
+        } else if status == .denied || status == .restricted {
             isResolving = false
             statusMessage = "Location off — using \(ResolvedLocation.current().city ?? "Dubai")"
-        @unknown default:
+        } else {
             isResolving = false
         }
     }
@@ -113,14 +108,12 @@ extension LocationManager: CLLocationManagerDelegate {
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             self.authorizationStatus = self.manager.authorizationStatus
-            switch self.manager.authorizationStatus {
-            case .authorized, .authorizedAlways:
+            let status = self.manager.authorizationStatus
+            if status.grantsLocation {
                 if AppSettings.locationMode == .auto { self.manager.requestLocation() }
-            case .denied, .restricted:
+            } else if status == .denied || status == .restricted {
                 self.isResolving = false
                 self.statusMessage = "Location access denied"
-            default:
-                break
             }
         }
     }
@@ -136,5 +129,17 @@ extension LocationManager: CLLocationManagerDelegate {
             self.isResolving = false
             self.statusMessage = "Couldn't determine location"
         }
+    }
+}
+
+extension CLAuthorizationStatus {
+    /// Whether the app may read location: "always", or — on iOS — "while in use".
+    /// `.authorizedWhenInUse` doesn't exist on macOS; `.authorized` is the macOS equivalent.
+    var grantsLocation: Bool {
+        #if os(macOS)
+        return self == .authorized || self == .authorizedAlways
+        #else
+        return self == .authorizedWhenInUse || self == .authorizedAlways
+        #endif
     }
 }

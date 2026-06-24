@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 import AppKit
 
@@ -46,3 +47,4 @@ struct WindowTransparencyConfigurator: NSViewRepresentable {
     }
     func updateNSView(_ nsView: NSView, context: Context) {}
 }
+#endif

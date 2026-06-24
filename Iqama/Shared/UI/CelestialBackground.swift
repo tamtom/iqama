@@ -15,12 +15,19 @@ struct CelestialBackground: View {
     // Pauses the per-second sky refresh when the window is neither key nor
     // active (backgrounded / occluded), so a non-focused window renders a
     // single static frame at 0 fps instead of recompositing every second.
+    // macOS-only: on iOS the system suspends the app when backgrounded, so the
+    // manual pause isn't needed (and `controlActiveState` doesn't exist there).
+    #if os(macOS)
     @Environment(\.controlActiveState) private var controlActiveState
+    private var isInactive: Bool { controlActiveState == .inactive }
+    #else
+    private var isInactive: Bool { false }
+    #endif
 
     var body: some View {
         if let timeOverride {
             content(at: timeOverride)
-        } else if animateOverTime && controlActiveState != .inactive {
+        } else if animateOverTime && !isInactive {
             TimelineView(.periodic(from: .now, by: 1.0)) { ctx in
                 content(at: ctx.date)
             }
@@ -114,14 +121,20 @@ struct StarField: View {
 
     // Freeze the twinkle when the window isn't focused/active. Without this the
     // `.animation` schedule keeps firing whether or not the window is visible —
-    // the single biggest source of the app's background energy drain.
+    // the single biggest source of the app's background energy drain. macOS-only;
+    // iOS suspends the app when backgrounded so there's nothing to gate.
+    #if os(macOS)
     @Environment(\.controlActiveState) private var controlActiveState
+    private var isInactive: Bool { controlActiveState == .inactive }
+    #else
+    private var isInactive: Bool { false }
+    #endif
 
     var body: some View {
         // 4 fps is visually indistinguishable from 30 for a slow drift/twinkle
         // (star motion has a multi-second period) but uses ~8× less power.
         TimelineView(.animation(minimumInterval: 1.0 / 4.0,
-                                paused: controlActiveState == .inactive)) { ctx in
+                                paused: isInactive)) { ctx in
             let phase = ctx.date.timeIntervalSinceReferenceDate
             Canvas { gc, size in
                 var rng = SplitMix64(state: seed)

@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Combine
 
@@ -125,3 +126,4 @@ private struct GitHubRelease: Decodable {
         case body, draft, prerelease, assets
     }
 }
+#endif
