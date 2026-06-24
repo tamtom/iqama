@@ -73,26 +73,20 @@ final class UpdateInstaller: ObservableObject {
     private func download(_ url: URL) async throws -> URL {
         var request = URLRequest(url: url)
         request.setValue("Dubai-Iqama", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 60
+        request.timeoutInterval = 120
 
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        // Fetch the whole asset in one request. We deliberately do NOT use
+        // `URLSession.bytes` + `for await byte`: that yields a single UInt8 per
+        // iteration, and because this type is @MainActor every byte became an
+        // await hop back to the main thread — ~1.3M of them for a 1.3 MB DMG, so
+        // a sub-second download took *minutes* with the network barely involved.
+        // `data(for:)` does the transfer off-actor and resumes us once. The DMG
+        // is ~1.3 MB, so holding it in memory briefly is fine.
+        let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw Err("Download failed (HTTP \((response as? HTTPURLResponse)?.statusCode ?? -1)).")
         }
-        let total = http.expectedContentLength
-        var data = Data()
-        if total > 0 { data.reserveCapacity(Int(total)) }
-        var lastReported = 0.0
-        for try await byte in bytes {
-            data.append(byte)
-            if total > 0 {
-                let p = Double(data.count) / Double(total)
-                if p - lastReported >= 0.02 {
-                    lastReported = p
-                    phase = .downloading(p)
-                }
-            }
-        }
+        phase = .downloading(1.0)
 
         let tmp = FileManager.default.temporaryDirectory
             .appendingPathComponent("DubaiIqamaUpdate-\(UUID().uuidString).dmg")
