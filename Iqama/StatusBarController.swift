@@ -49,22 +49,25 @@ class StatusBarController: NSObject {
     }
 
     private func updateStatusBarDisplay(with snapshot: CountdownSnapshot?) {
-        guard let snapshot = snapshot else {
-            updateButtonTitle(with: "Prayer")
-            return
-        }
-
-        updateButtonTitle(with: snapshot.statusBarText)
+        updateButtonTitle(with: snapshot?.statusBarText ?? "Prayer")
     }
 
+    // The countdown publishes every second, but the menu-bar text is
+    // minute-resolution — skip the AppKit work unless it actually changed so a
+    // backgrounded menu-bar app isn't rebuilding its button title 60×/minute.
+    private var lastTitle: String?
+    private lazy var templateImage: NSImage? = {
+        let image = NSImage(systemSymbolName: "moon.stars.fill", accessibilityDescription: "Prayer")
+        image?.isTemplate = true
+        return image
+    }()
+
     private func updateButtonTitle(with title: String) {
-        if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "moon.stars.fill", accessibilityDescription: "Prayer")
-            image?.isTemplate = true
-            button.image = image
-            button.imagePosition = .imageLeading
-            button.title = " \(title)"
-        }
+        guard title != lastTitle, let button = statusItem.button else { return }
+        lastTitle = title
+        button.image = templateImage
+        button.imagePosition = .imageLeading
+        button.title = " \(title)"
     }
 
     @objc private func togglePopover() {

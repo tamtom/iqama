@@ -389,7 +389,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = W5THJP5XXD;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
@@ -400,7 +400,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tamimi.shared.Dubai-iqama";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.itdeveapps.iqama";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
@@ -428,7 +428,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = W5THJP5XXD;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -440,7 +440,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tamimi.shared.Dubai-iqama";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.itdeveapps.iqama";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
@@ -466,7 +466,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = W5THJP5XXD;
 				ENABLE_APP_SANDBOX = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -479,7 +479,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tamimi.shared.Dubai-iqama.widget";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.itdeveapps.iqama.widget";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
@@ -503,7 +503,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = W5THJP5XXD;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -517,7 +517,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tamimi.shared.Dubai-iqama.widget";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.itdeveapps.iqama.widget";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";

@@ -11,9 +11,20 @@ struct ContentView: View {
     #if os(macOS)
     @StateObject private var updateChecker = UpdateChecker.shared
     @Environment(\.openSettings) private var openSettings
+    // When the window isn't key/active, suppress the per-second countdown
+    // animation. The `.numericText()` content transition interpolates the entire
+    // glass display list at the display refresh rate every time the seconds tick,
+    // which kept the app pinning the CPU even while backgrounded (confirmed via
+    // `sample`: InterpolatedDisplayList / rewriteInterpolation). When inactive we
+    // snap the value and show it at minute resolution, so a backgrounded window
+    // does effectively no rendering work between minutes.
+    @Environment(\.controlActiveState) private var controlActiveState
+    private var windowActive: Bool { controlActiveState != .inactive }
     #else
     // iOS has no Settings scene / menu bar — present settings as a sheet instead.
     @State private var showSettings = false
+    // iOS suspends backgrounded apps, so there's nothing to gate.
+    private var windowActive: Bool { true }
     #endif
 
     @AppStorage(AppSettings.Keys.locationConfirmed, store: AppSettings.shared)
@@ -181,7 +192,11 @@ struct ContentView: View {
                 countdownBody(
                     prayer: snapshot.phase.prayer,
                     isIqama: snapshot.phase.isIqamaPhase,
-                    countdownText: snapshot.formattedTimeRemaining,
+                    // Live seconds only while the window is being looked at; a
+                    // backgrounded window shows a static minute-resolution value
+                    // so the second-by-second string churn (and its display-list
+                    // interpolation) stops entirely.
+                    countdownText: windowActive ? snapshot.formattedTimeRemaining : snapshot.shortFormattedTime,
                     day: snapshot.todayPrayerTimes,
                     settings: snapshot.azanSettings
                 )
@@ -226,7 +241,7 @@ struct ContentView: View {
                     .foregroundStyle(Theme.textSecondary)
             }
             .contentTransition(.opacity)
-            .animation(.easeInOut(duration: 0.4), value: prayer.rawValue)
+            .animation(windowActive ? .easeInOut(duration: 0.4) : nil, value: prayer.rawValue)
 
             Text(countdownText)
                 .font(.system(size: 64, weight: .bold, design: .rounded))
@@ -235,7 +250,7 @@ struct ContentView: View {
                 .shadow(color: (isIqama ? Theme.accentGold : Theme.accentEmerald).opacity(0.55),
                         radius: 14, x: 0, y: 0)
                 .contentTransition(.numericText())
-                .animation(.spring(duration: 0.35), value: countdownText)
+                .animation(windowActive ? .spring(duration: 0.35) : nil, value: countdownText)
 
             if let day, let azan = day.prayerTime(for: prayer) {
                 HStack(spacing: 12) {
