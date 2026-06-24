@@ -56,6 +56,8 @@ Medium widget on the desktop showing the sky arc, the next prayer name in Arabic
 
 After this first install, the app keeps itself up to date — future versions are offered in-app with a one-click update (see below).
 
+> **Updating from a version before 1.4.3?** Those builds shipped with a slow in-app downloader, so the one-time update to 1.4.3 can crawl for several minutes (it still completes — it's not your connection). To skip the wait, just download the latest DMG from the [Releases page](https://github.com/tamtom/iqama/releases/latest) and drag it into Applications. From 1.4.3 onward, in-app updates are fast.
+
 Optional: open the **Widget Gallery** (right-click the desktop → Edit Widgets) to add one of the three widget sizes.
 
 ## Build from source
