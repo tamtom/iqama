@@ -76,9 +76,9 @@ extension AppSettings {
     }
 }
 
-/// Plays the full Adhan when a prayer's azan time arrives while the app runs, and plays the
-/// preview in Settings. On iOS the app is suspended in the background, so there the scheduled
-/// azan notification plays the short clip instead (see `NotificationManager`).
+/// Plays the preview in Settings. On macOS it also plays the full Adhan at each azan time,
+/// because the menu bar app runs all the time. On iOS only the azan notification plays the
+/// Adhan, when the app is closed or in the background (see `NotificationManager`).
 @MainActor
 final class AdhanPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     static let shared = AdhanPlayer()
@@ -96,8 +96,10 @@ final class AdhanPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private override init() { super.init() }
 
     /// Called each second with the countdown state. `now` is the preview clock, so the time
-    /// preview ("Azan in 5 s") plays the Adhan too.
+    /// preview ("Azan in 5 s") plays the Adhan too. iOS does nothing here: the open app stays
+    /// silent at the azan time.
     func observe(_ snapshot: CountdownSnapshot, now: Date) {
+        #if os(macOS)
         guard case .waitingForIqama(let prayer, _) = snapshot.phase else {
             // Before the azan: forget the last azan, so a preview can play the same azan again.
             lastAzanKey = nil
@@ -109,7 +111,6 @@ final class AdhanPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         lastAzanKey = key
         guard now.timeIntervalSince(azan) < lateLimit, AppSettings.adhanEnabled(for: prayer) else { return }
         play(AppSettings.adhanSound)
-        #if os(macOS)
         // The banner follows the real time only, like the other notifications.
         if !PreviewClock.shared.isActive {
             let iqama = snapshot.phase.targetTime

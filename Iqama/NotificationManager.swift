@@ -283,8 +283,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     // MARK: - Azan alert
 
     /// The alert at a prayer's azan time. On iOS its sound is the short Adhan clip, because iOS
-    /// plays at most 30 seconds of a notification sound. While the app is open, `AdhanPlayer`
-    /// plays the full Adhan, and the alert shows without its sound.
+    /// plays at most 30 seconds of a notification sound. The clip plays only when the app is
+    /// closed or in the background. While the app is open, the alert shows without its sound.
     private static func azanContent(for prayer: Prayer, iqamaMinutes: Int) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = "\(prayer.displayName) Azan"
@@ -326,7 +326,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // The open app plays the full Adhan itself, so the azan alert's short clip stays silent.
+        // The Adhan plays only when the app is closed or in the background, so the open app
+        // shows the azan alert without its sound.
         if notification.request.identifier.hasPrefix("azan-") {
             completionHandler([.banner, .list])
             return

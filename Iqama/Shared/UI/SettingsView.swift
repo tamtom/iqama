@@ -228,7 +228,7 @@ struct SettingsView: View {
             Text("Adhan")
         } footer: {
             #if os(iOS)
-            Text("The Adhan plays at the azan time of each prayer that is on. When the app is closed, iOS plays the first part with the notification. When the app is open, the full Adhan plays.")
+            Text("The Adhan plays with the azan notification of each prayer that is on, when the app is closed or in the background. iOS plays the first 30 seconds or less. When the app is open, the notification has no sound.")
             #else
             Text("The full Adhan plays at the azan time of each prayer that is on, while Iqama runs in the menu bar.")
             #endif

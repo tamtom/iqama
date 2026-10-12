@@ -46,7 +46,8 @@ class CountdownManager: ObservableObject {
             currentState = newState
             error = nil
 
-            // The Adhan follows the preview clock too, so a tester can hear it with "Azan in 5 s".
+            // macOS: the Adhan follows the preview clock too, so a tester can hear it with
+            // "Azan in 5 s". iOS: the open app stays silent at the azan time.
             AdhanPlayer.shared.observe(newState, now: preview.now)
 
             // A preview shows a shifted clock; notifications and the Live Activity follow real time.
