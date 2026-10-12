@@ -111,6 +111,14 @@ struct DailyPrayerTimes: Codable {
         dateFormatter.date(from: shurooq)
     }
 
+    /// The sunrise, when the countdown shows it: after the Fajr iqama and before the sunrise,
+    /// while the next prayer is Dhuhr. Only the display uses it. The alerts and the Adhan
+    /// follow the prayers.
+    func sunriseCountdownTarget(nextPrayer: Prayer, isIqama: Bool, now: Date) -> Date? {
+        guard nextPrayer == .zuhr, !isIqama, let sunrise = sunriseTime, now < sunrise else { return nil }
+        return sunrise
+    }
+
     var isFriday: Bool {
         dayofWeek == "Friday"
     }

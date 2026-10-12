@@ -2,6 +2,7 @@ import SwiftUI
 
 /// The hero: the phase, a live countdown, and the prayer name on a soft dark glow. The time
 /// of the azan or iqama is in the prayer list just below, so the hero does not repeat it.
+/// After the Fajr iqama, the hero counts down to the sunrise.
 struct CountdownDial: View {
     var prayer: Prayer
     var title: String             // "Jumu'ah" on Friday zuhr
@@ -9,10 +10,12 @@ struct CountdownDial: View {
     var countdown: String
     var remaining: TimeInterval
     var live: Bool                // false: freeze per-second animation (inactive Mac window)
+    var isSunrise = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var accent: Color { isIqama ? Theme.accentGold : Theme.accentEmerald }
+    private var accent: Color { isSunrise ? Theme.sunrise : isIqama ? Theme.accentGold : Theme.accentEmerald }
+    private var phaseText: String { isSunrise ? "Sunrise in" : isIqama ? "Iqama in" : "Azan in" }
     private var finalMinute: Bool { remaining <= 60 }
     /// The countdown without its seconds ("1:32:46" → "1:32"), except in the final minute.
     private var rollKey: String { finalMinute ? countdown : String(countdown.dropLast(3)) }
@@ -29,7 +32,7 @@ struct CountdownDial: View {
             VStack(spacing: 6) {
                 HStack(spacing: 6) {
                     LiveDot(color: accent)
-                    Text(isIqama ? "Iqama in" : "Azan in")
+                    Text(phaseText)
                         .font(.system(size: 11, weight: .semibold))
                         .tracking(1.6)
                         .textCase(.uppercase)
@@ -51,24 +54,25 @@ struct CountdownDial: View {
                     .lineLimit(1)
 
                 VStack(spacing: 0) {
-                    Text(title)
+                    Text(isSunrise ? "Sunrise" : title)
                         .font(.system(size: 26, weight: .semibold, design: .rounded))
-                    Text(prayer.arabicName)
+                    Text(isSunrise ? "الشروق" : prayer.arabicName)
                         .font(.system(size: 17))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .foregroundStyle(Theme.textPrimary)
-                .id(prayer)
+                .id(isSunrise ? "sunrise" : prayer.rawValue)
                 .transition(reduceMotion ? AnyTransition.opacity : AnyTransition(.blurReplace).combined(with: .scale(scale: 0.9)))
             }
             .padding(.horizontal, 36)
             .animation(.smooth(duration: 0.6), value: prayer)
             .animation(.smooth(duration: 0.6), value: isIqama)
+            .animation(.smooth(duration: 0.6), value: isSunrise)
         }
         .aspectRatio(1, contentMode: .fit)
         .frame(maxWidth: 300)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title) \(isIqama ? "iqama" : "azan") in \(countdown)")
+        .accessibilityLabel(isSunrise ? "Sunrise in \(countdown)" : "\(title) \(isIqama ? "iqama" : "azan") in \(countdown)")
     }
 }
 

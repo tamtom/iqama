@@ -42,9 +42,19 @@ struct CountdownSnapshot {
     let timeRemaining: TimeInterval
     let todayPrayerTimes: DailyPrayerTimes?
     let azanSettings: AzanSettings?
+    /// The sunrise, when it comes before the next prayer phase. The countdown then shows the
+    /// time to the sunrise. `phase` and `timeRemaining` stay on the prayer, so the alerts and
+    /// the Adhan do not change.
+    var sunrise: Date? = nil
+
+    /// The time to what the countdown shows: the sunrise, or the next azan or iqama.
+    var displayRemaining: TimeInterval {
+        guard let sunrise else { return timeRemaining }
+        return max(0, timeRemaining - phase.targetTime.timeIntervalSince(sunrise))
+    }
 
     var formattedTimeRemaining: String {
-        let totalSeconds = Int(max(0, timeRemaining))
+        let totalSeconds = Int(max(0, displayRemaining))
         let hours = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
         let seconds = totalSeconds % 60
@@ -57,7 +67,7 @@ struct CountdownSnapshot {
     }
 
     var shortFormattedTime: String {
-        let totalSeconds = Int(max(0, timeRemaining))
+        let totalSeconds = Int(max(0, displayRemaining))
         let hours = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
 
@@ -71,7 +81,7 @@ struct CountdownSnapshot {
     }
 
     var statusBarText: String {
-        let label = phase.displayLabel
+        let label = sunrise != nil ? "Sunrise" : phase.displayLabel
         return "\(label) \(shortFormattedTime)"
     }
 }

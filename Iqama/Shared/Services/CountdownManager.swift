@@ -98,7 +98,8 @@ class CountdownManager: ObservableObject {
             phase: phase,
             timeRemaining: max(0, timeRemaining),
             todayPrayerTimes: dailyTimes,
-            azanSettings: settings
+            azanSettings: settings,
+            sunrise: dailyTimes.sunriseCountdownTarget(nextPrayer: prayer, isIqama: phase.isIqamaPhase, now: now)
         )
     }
 

@@ -57,7 +57,7 @@ struct ContentView: View {
             let sunrise = day?.sunriseTime ?? day?.prayerTime(for: .fajr).map { $0.addingTimeInterval(80 * 60) }
             let sunset = day?.prayerTime(for: .maghrib)
             let asr = day?.prayerTime(for: .asr)
-            let body = SkyGeometry.bodyNormalized(at: now, sunrise: sunrise, sunset: sunset)
+            let body = SkyGeometry.bodyNormalized(at: now, day: day)
             let ground = SkyPalette.colors(at: now, sunrise: sunrise, sunset: sunset, asr: asr).groundColor
 
             ZStack {
@@ -246,8 +246,9 @@ struct ContentView: View {
                 // window shows a static minute-resolution value so the per-second string
                 // churn (and its display-list interpolation) stops entirely.
                 countdown: windowActive ? snapshot.formattedTimeRemaining : snapshot.shortFormattedTime,
-                remaining: snapshot.timeRemaining,
-                live: windowActive
+                remaining: snapshot.displayRemaining,
+                live: windowActive,
+                isSunrise: snapshot.sunrise != nil
             )
             .overlay {
                 StarBurst(trigger: burst,

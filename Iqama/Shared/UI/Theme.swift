@@ -55,6 +55,7 @@ enum Theme {
     // (those would disappear on the daytime teal-blue keyframes).
     static let accentEmerald = rgb(1.00, 0.66, 0.32)   // amber — name kept for call-site stability
     static let accentGold    = rgb(0.99, 0.82, 0.42)   // warm gold
+    static let sunrise       = rgb(1.00, 0.58, 0.52)   // dawn coral: the countdown to the sunrise
     static let glowSoft      = rgb(1.00, 0.94, 0.78)
 
     // Surface tokens.

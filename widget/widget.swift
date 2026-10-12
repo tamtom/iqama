@@ -20,8 +20,13 @@ struct PrayerTimelineEntry: TimelineEntry {
     let sky: SkyColors
     let bodyNormalizedX: Double       // sun/moon position along its arc [0,1]
     let bodyIsDay: Bool
+    /// The sunrise, when the countdown shows it (after the Fajr iqama, before the sunrise).
+    var sunrise: Date? = nil
 
-    var accent: Color { isIqamaPhase ? Theme.accentGold : Theme.accentEmerald }
+    /// What the countdown counts to: the sunrise, or the next azan or iqama.
+    var countdownTarget: Date { sunrise ?? targetTime }
+
+    var accent: Color { sunrise != nil ? Theme.sunrise : isIqamaPhase ? Theme.accentGold : Theme.accentEmerald }
 
     static var placeholder: PrayerTimelineEntry {
         let now = Date()
@@ -51,7 +56,7 @@ struct PrayerTimelineProvider: TimelineProvider {
         completion(createEntry(for: Date()) ?? .placeholder)
     }
 
-    /// Entries every 15 minutes for 6 hours, plus one at each azan and iqama. The sky and the
+    /// Entries every 15 minutes for 6 hours, plus one at each azan, iqama, and sunrise. The sky and the
     /// sun follow the time; the countdown text runs live between entries.
     func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerTimelineEntry>) -> Void) {
         let now = Date()
@@ -63,6 +68,7 @@ struct PrayerTimelineProvider: TimelineProvider {
         for _ in 0..<12 {
             guard let entry = createEntry(for: cursor), entry.targetTime <= horizon else { break }
             dates.insert(entry.targetTime)
+            if let sunrise = entry.sunrise { dates.insert(sunrise) }
             cursor = entry.targetTime.addingTimeInterval(1)
         }
 
@@ -80,7 +86,7 @@ struct PrayerTimelineProvider: TimelineProvider {
 
         let sunrise = day.sunriseTime ?? day.prayerTime(for: .fajr).map { $0.addingTimeInterval(80 * 60) }
         let sunset = day.prayerTime(for: .maghrib)
-        let body = SkyGeometry.bodyNormalized(at: date, sunrise: sunrise, sunset: sunset)
+        let body = SkyGeometry.bodyNormalized(at: date, day: day)
 
         return PrayerTimelineEntry(
             date: date, prayer: prayer, isIqamaPhase: isIqama,
@@ -91,7 +97,8 @@ struct PrayerTimelineProvider: TimelineProvider {
             sky: SkyPalette.colors(at: date, sunrise: sunrise, sunset: sunset,
                                    asr: day.prayerTime(for: .asr)),
             bodyNormalizedX: body.x,
-            bodyIsDay: body.isDay
+            bodyIsDay: body.isDay,
+            sunrise: day.sunriseCountdownTarget(nextPrayer: prayer, isIqama: isIqama, now: date)
         )
     }
 }
@@ -221,7 +228,7 @@ private struct PhaseLabel: View {
                 .fill(entry.accent)
                 .frame(width: 5, height: 5)
                 .shadow(color: entry.accent.opacity(0.8), radius: 3)
-            Text(entry.isIqamaPhase ? "Iqama in" : "Azan in")
+            Text(entry.sunrise != nil ? "Sunrise in" : entry.isIqamaPhase ? "Iqama in" : "Azan in")
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(1.2)
                 .textCase(.uppercase)
@@ -235,7 +242,8 @@ private struct PrayerTitle: View {
     var size: CGFloat
 
     private var name: String {
-        entry.prayer == .zuhr && entry.day?.isFriday == true ? "Jumu'ah" : entry.prayer.displayName
+        if entry.sunrise != nil { return "Sunrise" }
+        return entry.prayer == .zuhr && entry.day?.isFriday == true ? "Jumu'ah" : entry.prayer.displayName
     }
 
     var body: some View {
@@ -243,7 +251,7 @@ private struct PrayerTitle: View {
             Text(name)
                 .font(.system(size: size, weight: .semibold, design: .rounded))
                 .foregroundStyle(Theme.textPrimary)
-            Text(entry.prayer.arabicName)
+            Text(entry.sunrise != nil ? "الشروق" : entry.prayer.arabicName)
                 .font(.system(size: size * 0.75))
                 .foregroundStyle(Theme.textSecondary)
         }
@@ -252,13 +260,13 @@ private struct PrayerTitle: View {
     }
 }
 
-/// Counts down live and stops at zero; the next entry takes over at the azan or iqama.
+/// Counts down live and stops at zero; the next entry takes over at the azan, the iqama, or the sunrise.
 private struct Countdown: View {
     let entry: PrayerTimelineEntry
     var size: CGFloat
 
     var body: some View {
-        Text(timerInterval: entry.date...max(entry.date, entry.targetTime), countsDown: true)
+        Text(timerInterval: entry.date...max(entry.date, entry.countdownTarget), countsDown: true)
             .font(.system(size: size, weight: .bold, design: .rounded))
             .monospacedDigit()
             .lineLimit(1)
@@ -273,7 +281,7 @@ private struct TargetLine: View {
     let entry: PrayerTimelineEntry
 
     var body: some View {
-        Text("\(entry.isIqamaPhase ? "Iqama" : "Azan") at \(entry.targetTime.formatted(date: .omitted, time: .shortened))")
+        Text("\(entry.sunrise != nil ? "Sunrise" : entry.isIqamaPhase ? "Iqama" : "Azan") at \(entry.countdownTarget.formatted(date: .omitted, time: .shortened))")
             .font(.system(size: 10, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(Theme.textSecondary)

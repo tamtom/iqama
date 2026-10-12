@@ -9,9 +9,7 @@ struct StatusBarMenuView: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { ctx in
             let day = countdownManager.currentState?.todayPrayerTimes
-            let sunrise = day?.prayerTime(for: .fajr).map { $0.addingTimeInterval(80 * 60) }
-            let sunset = day?.prayerTime(for: .maghrib)
-            let body = SkyGeometry.bodyNormalized(at: ctx.date, sunrise: sunrise, sunset: sunset)
+            let body = SkyGeometry.bodyNormalized(at: ctx.date, day: day)
             let activePrayer = countdownManager.currentState?.phase.prayer
 
             ZStack {
@@ -80,31 +78,31 @@ struct StatusBarMenuView: View {
             if let snapshot = countdownManager.currentState {
                 let prayer = snapshot.phase.prayer
                 let isIqama = snapshot.phase.isIqamaPhase
+                let isSunrise = snapshot.sunrise != nil
+                let accent = isSunrise ? Theme.sunrise : isIqama ? Theme.accentGold : Theme.accentEmerald
 
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(isIqama ? Theme.accentGold : Theme.accentEmerald)
+                        .fill(accent)
                         .frame(width: 6, height: 6)
-                        .shadow(color: (isIqama ? Theme.accentGold : Theme.accentEmerald).opacity(0.6),
-                                radius: 4)
-                    Text(isIqama ? "Iqama" : prayer.displayName)
+                        .shadow(color: accent.opacity(0.6), radius: 4)
+                    Text(isSunrise ? "Sunrise" : isIqama ? "Iqama" : prayer.displayName)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Theme.textPrimary)
                     Text("·")
                         .foregroundStyle(Theme.textMuted)
-                    Text(prayer.arabicName)
+                    Text(isSunrise ? "الشروق" : prayer.arabicName)
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.4), value: prayer.rawValue)
+                .animation(.easeInOut(duration: 0.4), value: isSunrise ? "sunrise" : prayer.rawValue)
 
                 Text(snapshot.formattedTimeRemaining)
                     .font(.system(size: 38, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.white)
-                    .shadow(color: (isIqama ? Theme.accentGold : Theme.accentEmerald).opacity(0.55),
-                            radius: 10, x: 0, y: 0)
+                    .shadow(color: accent.opacity(0.55), radius: 10, x: 0, y: 0)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.35), value: snapshot.formattedTimeRemaining)
             } else if countdownManager.error != nil {

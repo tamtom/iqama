@@ -64,10 +64,13 @@ final class LiveActivityController {
             }
         }
 
-        // Request each window once. If the user swipes an activity away, it stays away until
-        // the next prayer instead of coming back on the next reconcile.
+        // Request a live window once. If the user swipes an activity away, it stays away until
+        // the next prayer instead of coming back on the next reconcile. A window that has not
+        // started yet is requested again when it is missing: the user cannot swipe it away, but
+        // iOS removes scheduled activities when a new build of the app installs.
         var requested = Self.requestedWindows(pruningBefore: now)
-        for window in windows where !present.contains(window.id) && !requested.contains(window.id) {
+        for window in windows where !present.contains(window.id)
+            && (window.azan > now || !requested.contains(window.id)) {
             guard request(window, now: now) else { break }  // limit reached or not allowed now
             requested.insert(window.id)
         }
