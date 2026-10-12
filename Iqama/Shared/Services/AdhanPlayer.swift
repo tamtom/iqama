@@ -3,21 +3,29 @@ import AVFoundation
 import Combine
 import UserNotifications
 
-/// The Adhan recordings in the app. All have a free license (CC0, CC BY, or CC BY-SA), and
-/// Settings shows the credit for each one. Each sound has two files in `Resources/Adhan`:
-/// the full Adhan for the app (`adhan-<id>.m4a`) and a short clip for the notification
-/// (`adhan-<id>-alert.caf`). iOS plays at most 30 seconds of a notification sound.
+/// The Adhan recordings in the app. Settings shows the source of each one. Each sound has two
+/// files in `Resources/Adhan`: the full Adhan for the app (`adhan-<id>.m4a`) and a short clip
+/// for the notification (`adhan-<id>-alert.caf`). iOS plays at most 30 seconds of a
+/// notification sound. The app trims, fades, and normalizes the recordings.
 enum AdhanSound: String, CaseIterable, Identifiable {
-    case serene, gentle, madinah, warm
+    case makkah, madinah, aqsa, jordan, amman, alafasy, qatami, nufais, zahrani, sobhy, serene, gentle
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
+        case .makkah: return "Makkah"
+        case .madinah: return "Madinah"
+        case .aqsa: return "Al-Aqsa"
+        case .jordan: return "Jordan"
+        case .amman: return "Amman (many mosques)"
+        case .alafasy: return "Mishary Alafasy"
+        case .qatami: return "Nasser Al-Qatami"
+        case .nufais: return "Ahmed Al-Nufais"
+        case .zahrani: return "Mansour Al-Zahrani"
+        case .sobhy: return "Islam Sobhy"
         case .serene: return "Serene"
         case .gentle: return "Gentle"
-        case .madinah: return "Madinah"
-        case .warm: return "Warm"
         }
     }
 
@@ -25,29 +33,37 @@ enum AdhanSound: String, CaseIterable, Identifiable {
     var alertSoundName: UNNotificationSoundName { UNNotificationSoundName("adhan-\(rawValue)-alert.caf") }
 
     struct Credit {
-        let title: String
-        let author: String
-        let license: String
+        let detail: String
         let source: URL
     }
 
-    /// The recordings come from Wikimedia Commons. The app shortens, fades, and normalizes them.
     var credit: Credit {
+        let muezzin = "https://github.com/DBChoco/Muezzin"
+        let athany = "https://github.com/0xzer0x/athany"
         switch self {
+        case .makkah: return Credit(detail: "Masjid al-Haram. File from Muezzin.", source: URL(string: muezzin)!)
+        case .madinah: return Credit(detail: "Masjid an-Nabawi. File from Al-Azan.", source: URL(string: "https://github.com/meypod/al-azan")!)
+        case .aqsa: return Credit(detail: "Masjid al-Aqsa. File from Muezzin.", source: URL(string: muezzin)!)
+        case .jordan:
+            return Credit(detail: "“Adhan 1 Jordan”, Simtech Productions. YouTube Music.",
+                          source: URL(string: "https://music.youtube.com/watch?v=i0UnyIXogCU")!)
+        case .amman:
+            // Amman broadcasts one Adhan from all mosques at the same time. Six delayed copies
+            // (0.2–2.6 s), each quieter, duller, and panned, plus an outdoor reverb, give the
+            // echo of far mosques in the pauses.
+            return Credit(detail: "The Jordan Adhan with an added echo of many far mosques.",
+                          source: URL(string: "https://music.youtube.com/watch?v=i0UnyIXogCU")!)
+        case .alafasy: return Credit(detail: "Mishary Rashid Alafasy. File from Athany.", source: URL(string: athany)!)
+        case .qatami: return Credit(detail: "Nasser Al-Qatami. File from Athany.", source: URL(string: athany)!)
+        case .nufais: return Credit(detail: "Ahmed Al-Nufais. File from Muezzin.", source: URL(string: muezzin)!)
+        case .zahrani: return Credit(detail: "Mansour Al-Zahrani. File from Athany.", source: URL(string: athany)!)
+        case .sobhy: return Credit(detail: "Islam Sobhy. File from Athany.", source: URL(string: athany)!)
         case .serene:
-            return Credit(title: "Beautiful adhan", author: "Adam-synagda", license: "CC0 1.0",
+            return Credit(detail: "“Beautiful adhan” by Adam-synagda, CC0 1.0. Wikimedia Commons.",
                           source: URL(string: "https://commons.wikimedia.org/wiki/File:Beautiful_adhan.ogg")!)
         case .gentle:
-            return Credit(title: "The Adhan – Muslim Call to Prayer – Aaqib Azeez", author: "Atcovi",
-                          license: "CC BY-SA 4.0",
+            return Credit(detail: "“The Adhan – Aaqib Azeez” by Atcovi, CC BY-SA 4.0. Wikimedia Commons.",
                           source: URL(string: "https://commons.wikimedia.org/wiki/File:The_Adhan_-_Muslim_Call_to_Prayer_-_Aaqib_Azeez.mp3")!)
-        case .madinah:
-            return Credit(title: "Call to prayer from the Prophet's Mosque", author: "ejaz215 (Freesound)",
-                          license: "CC BY 3.0",
-                          source: URL(string: "https://commons.wikimedia.org/wiki/File:33937_ejaz215_call-to-prayer-from-the-prophet-s-mo.ogg")!)
-        case .warm:
-            return Credit(title: "Azan", author: "Andrewler", license: "CC BY-SA 4.0",
-                          source: URL(string: "https://commons.wikimedia.org/wiki/File:Azan.ogg")!)
         }
     }
 }
@@ -56,7 +72,7 @@ extension AppSettings {
     /// The selected Adhan. It lives here and not in `AppSettings`, because the widget target
     /// shares `AppSettings` but does not have the sounds.
     static var adhanSound: AdhanSound {
-        AdhanSound(rawValue: UserDefaults.standard.string(forKey: Keys.adhanSound) ?? Defaults.adhanSound) ?? .serene
+        AdhanSound(rawValue: UserDefaults.standard.string(forKey: Keys.adhanSound) ?? Defaults.adhanSound) ?? .makkah
     }
 }
 

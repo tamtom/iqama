@@ -213,14 +213,14 @@ struct SettingsView: View {
                 ForEach(AdhanSound.allCases) { sound in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(sound.displayName).font(.subheadline.weight(.medium))
-                        Text("“\(sound.credit.title)” by \(sound.credit.author), \(sound.credit.license)")
+                        Text(sound.credit.detail)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Link("Source", destination: sound.credit.source)
                             .font(.caption)
                     }
                 }
-                Text("The app shortens, fades, and normalizes the recordings.")
+                Text("The app trims, fades, and normalizes the recordings.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

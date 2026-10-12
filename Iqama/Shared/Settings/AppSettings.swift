@@ -66,7 +66,7 @@ enum AppSettings {
         static let nagIsha = false
         static let nagIntervalMinutes = 15
 
-        static let adhanSound = "serene"   // AdhanSound.serene
+        static let adhanSound = "makkah"   // AdhanSound.makkah
         static let adhanPrayer = true   // the Adhan plays for every prayer until the user turns one off
 
         static let locationMode = "auto"
