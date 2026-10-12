@@ -1,3 +1,6 @@
 
 # iOS signing assets (private keys, certs, profiles) — never commit
 signing/
+
+# Local archives and IPAs
+build/

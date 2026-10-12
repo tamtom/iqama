@@ -10,7 +10,7 @@ struct ContentView: View {
     @ObservedObject private var checkIn = NotificationManager.shared
     #if os(macOS)
     @StateObject private var updateChecker = UpdateChecker.shared
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openSettings) private var openSettingsAction
     // When the window isn't key/active, suppress the per-second countdown
     // animation. The `.numericText()` content transition interpolates the entire
     // glass display list at the display refresh rate every time the seconds tick,
@@ -42,13 +42,21 @@ struct ContentView: View {
     @AppStorage(AppSettings.Keys.nagIntervalMinutes) private var nagInterval = AppSettings.Defaults.nagIntervalMinutes
     @AppStorage(AppSettings.Keys.notificationsEnabled) private var notificationsEnabled = AppSettings.Defaults.notificationsEnabled
 
+    @Namespace private var dockNamespace
+    @State private var burst = 0
+    @State private var lastPhaseKey = ""
+    @State private var scrollPosition = ScrollPosition()
+    @State private var showTimePreview = false
+    private let previewClock = PreviewClock.shared
+
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { ctx in
-            let now = ctx.date
+            let now = ctx.date.addingTimeInterval(previewClock.offset)
             let day = countdownManager.currentState?.todayPrayerTimes
-            let sunrise = day?.prayerTime(for: .fajr).map { $0.addingTimeInterval(80 * 60) }
+            let sunrise = day?.sunriseTime ?? day?.prayerTime(for: .fajr).map { $0.addingTimeInterval(80 * 60) }
             let sunset = day?.prayerTime(for: .maghrib)
             let body = SkyGeometry.bodyNormalized(at: now, sunrise: sunrise, sunset: sunset)
+            let ground = SkyPalette.colors(at: now, sunrise: sunrise, sunset: sunset).groundColor
 
             ZStack {
                 #if os(macOS)
@@ -56,75 +64,108 @@ struct ContentView: View {
                 WindowBackdrop(material: .hudWindow)
                     .ignoresSafeArea()
 
-                // 2. Celestial gradient tints the blurred wallpaper with the
-                //    time-of-day mood without fully blocking it.
-                CelestialBackground(
-                    timeOverride: nil,
-                    bodyNormalizedX: body.x,
-                    bodyIsDay: body.isDay
-                )
-                .opacity(0.55)
-                .backgroundExtensionEffect()
-                .ignoresSafeArea()
+                // 2. The living sky tints the blurred wallpaper without fully blocking it.
+                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset)
+                    .opacity(0.7)
+                    .ignoresSafeArea()
 
                 // 3. AppKit interop: make the host NSWindow transparent.
                 WindowTransparencyConfigurator()
                     .frame(width: 0, height: 0)
                 #else
-                // iOS has no desktop wallpaper to blur — paint the celestial sky
-                // straight onto a dark base so it reads fully on its own.
                 Color.black.ignoresSafeArea()
-                CelestialBackground(
-                    timeOverride: nil,
-                    bodyNormalizedX: body.x,
-                    bodyIsDay: body.isDay
-                )
-                .ignoresSafeArea()
+                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset)
+                    .ignoresSafeArea()
                 #endif
 
                 ScrollView {
-                    VStack(spacing: 18) {
+                    VStack(spacing: 0) {
                         #if os(macOS)
                         if let update = updateChecker.availableUpdate {
                             UpdateBanner(update: update)
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 12)
                         }
                         #endif
 
                         header
+                            .padding(.horizontal, 28)
+                            .scrollTransition(.interactive, axis: .vertical) { content, phase in
+                                content.opacity(phase.isIdentity ? 1 : 0.3)
+                            }
 
-                        SkyArcView(date: now,
-                                   todayPrayerTimes: day,
-                                   activePrayer: effectivePrayer)
-                            .frame(height: 110)
+                        // The sun or moon orbits the countdown dial, from its middle on the
+                        // left, over the top, to its middle on the right.
+                        hero
+                            .padding(.horizontal, 64)
+                            .background {
+                                SkyArcView(date: now,
+                                           todayPrayerTimes: day,
+                                           activePrayer: effectivePrayer,
+                                           animateIn: true,
+                                           orbit: true)
+                                    .padding(.horizontal, 64)
+                            }
+                            .padding(.top, 64)
+                            .scrollTransition(.interactive, axis: .vertical) { content, phase in
+                                content
+                                    .scaleEffect(phase.value < 0 ? 0.88 : 1)
+                                    .opacity(phase.value < 0 ? 0.35 : 1)
+                            }
+                            .zIndex(1)
 
-                        countdownCard
+                        HorizonView(date: now, sunrise: sunrise, sunset: sunset)
+                            .padding(.top, -36)
 
-                        if let pending = checkIn.pendingCheckIn {
-                            checkInPendingCard(pending)
-                        }
-
-                        prayerRail
-
-                        checkInCTACard
-
-                        footer
+                        PrayerTimeline(day: day,
+                                       settings: countdownManager.currentState?.azanSettings,
+                                       activePrayer: effectivePrayer,
+                                       isIqamaPhase: effectiveIsIqama,
+                                       now: now)
+                            .padding(.horizontal, 14)
+                            .padding(.top, 4)
+                            .padding(.bottom, 24)
+                            .frame(maxWidth: 560)
+                            .frame(maxWidth: .infinity)
+                            // The ground under the skyline continues past the end of the content,
+                            // so a bounce at the bottom never shows sky below the land.
+                            .background(alignment: .top) {
+                                ground.padding(.bottom, -1200)
+                            }
                     }
-                    .padding(.horizontal, 32)
                     #if os(macOS)
-                    .padding(.top, 60)           // clear the macOS 26 window controls
+                    .padding(.top, 52)           // clear the macOS 26 window controls
                     #else
-                    .padding(.top, 12)           // safe area handles the notch on iOS
+                    .padding(.top, 8)            // safe area handles the notch on iOS
                     #endif
-                    .padding(.bottom, 24)
-                    .frame(maxWidth: .infinity)
                 }
                 .scrollIndicators(.hidden)
+                .safeAreaBar(edge: .bottom) { dock }
+                .scrollPosition($scrollPosition)
+                .onChange(of: effectivePrayer, initial: true) { _, prayer in
+                    scrollToActive(prayer)
+                }
+                .onChange(of: showTimePreview) { _, shown in
+                    // The preview panel is tall: keep the dial in view above it.
+                    if shown { withAnimation(.spring(duration: 0.6)) { scrollPosition.scrollTo(edge: .top) } }
+                    else { scrollToActive(effectivePrayer) }
+                }
             }
         }
         #if os(macOS)
         .frame(minWidth: 460, minHeight: 420)
         #endif
         .preferredColorScheme(.dark)
+        .sensoryFeedback(.success, trigger: burst)
+        .sensoryFeedback(trigger: checkIn.pendingCheckIn) { old, new in
+            // Answering a check-in clears it: confirm with a tap of success.
+            old != nil && new == nil ? .success : nil
+        }
+        .task { await previewClock.checkAvailability() }
+        .onChange(of: phaseKey) { old, new in
+            // Celebrate a real azan / iqama transition, not the first value after launch.
+            if !old.isEmpty, !new.isEmpty { burst += 1 }
+        }
         .onAppear {
             countdownManager.refresh()
             if !locationConfirmed {
@@ -158,213 +199,251 @@ struct ContentView: View {
         #endif
     }
 
+    private var phaseKey: String {
+        guard let phase = countdownManager.currentState?.phase else { return "" }
+        return "\(phase.prayer.rawValue)|\(phase.isIqamaPhase)"
+    }
+
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Iqama")
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Theme.textPrimary)
-                Text(dateString)
-                    .font(.system(size: 12, weight: .medium))
+        HStack(alignment: .lastTextBaseline) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(previewClock.now, format: .dateTime.weekday(.wide).day().month(.wide))
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(1.2)
+                    .textCase(.uppercase)
                     .foregroundStyle(Theme.textSecondary)
+                if let day = countdownManager.currentState?.todayPrayerTimes {
+                    Text("\(day.hijryDay) \(day.hijriMonthName) \(String(day.hijryYear))")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Theme.textPrimary)
+                        .contentTransition(.opacity)
+                } else {
+                    Text("Iqama")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Theme.textPrimary)
+                }
             }
             Spacer()
         }
     }
 
-    private var dateString: String {
-        let df = DateFormatter()
-        df.dateFormat = "EEEE, d MMMM"
-        var s = df.string(from: Date())
-        if let h = countdownManager.currentState?.todayPrayerTimes?.hijriDateString {
-            s += " · " + h
+    // MARK: - Hero
+
+    @ViewBuilder
+    private var hero: some View {
+        if let snapshot = countdownManager.currentState {
+            CountdownDial(
+                prayer: snapshot.phase.prayer,
+                title: snapshot.phase.prayer == .zuhr && snapshot.todayPrayerTimes?.isFriday == true
+                    ? "Jumu'ah" : snapshot.phase.prayer.displayName,
+                isIqama: snapshot.phase.isIqamaPhase,
+                progress: progress(for: snapshot),
+                // Live seconds only while the window is being looked at; a backgrounded
+                // window shows a static minute-resolution value so the per-second string
+                // churn (and its display-list interpolation) stops entirely.
+                countdown: windowActive ? snapshot.formattedTimeRemaining : snapshot.shortFormattedTime,
+                remaining: snapshot.timeRemaining,
+                targetTime: snapshot.phase.targetTime,
+                live: windowActive
+            )
+            .overlay {
+                StarBurst(trigger: burst,
+                          color: snapshot.phase.isIqamaPhase ? Theme.accentGold : Theme.accentEmerald)
+                    .padding(-60)
+            }
+        } else if countdownManager.error != nil {
+            errorBody
+                .padding(24)
+                .frame(maxWidth: .infinity)
+                .background(.ultraThinMaterial, in: .rect(cornerRadius: 28))
+                .padding(.vertical, 40)
+        } else {
+            ProgressView()
+                .controlSize(.large)
+                .tint(.white)
+                .frame(height: 280)
         }
-        return s
     }
 
-    // MARK: - Countdown card
+    /// How far the countdown is through its interval: from azan to iqama, or from the
+    /// previous prayer's iqama to this azan.
+    private func progress(for snapshot: CountdownSnapshot) -> Double {
+        let phase = snapshot.phase
+        let start: Date?
+        if phase.isIqamaPhase {
+            start = snapshot.todayPrayerTimes?.prayerTime(for: phase.prayer)
+        } else {
+            // Fajr's previous prayer is the isha of the day before the target.
+            let anchor = phase.prayer == .fajr ? phase.targetTime.addingTimeInterval(-86_400) : phase.targetTime
+            start = (try? PrayerTimesService.shared.getAllPrayerTimes(for: anchor))?
+                .first { $0.prayer == phase.prayer.previous }?.iqamaTime
+        }
+        guard let start else { return 0 }
+        let total = phase.targetTime.timeIntervalSince(start)
+        guard total > 0 else { return 1 }
+        return min(max(1 - snapshot.timeRemaining / total, 0), 1)
+    }
 
-    private var countdownCard: some View {
-        Group {
-            if let snapshot = countdownManager.currentState {
-                countdownBody(
-                    prayer: snapshot.phase.prayer,
-                    isIqama: snapshot.phase.isIqamaPhase,
-                    // Live seconds only while the window is being looked at; a
-                    // backgrounded window shows a static minute-resolution value
-                    // so the second-by-second string churn (and its display-list
-                    // interpolation) stops entirely.
-                    countdownText: windowActive ? snapshot.formattedTimeRemaining : snapshot.shortFormattedTime,
-                    day: snapshot.todayPrayerTimes,
-                    settings: snapshot.azanSettings
-                )
-            } else if countdownManager.error != nil {
-                errorBody
-            } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(.white)
-                    .padding(18)
+    /// Keeps the current prayer's row in view above the dock. Fajr and Zuhr sit near the top of
+    /// the list, so the sky stays in full view; for later prayers the list moves to its end.
+    /// (A scroll to the row's id does not work here: the rows are in a nested stack, and
+    /// `scrollTargetLayout` only works on the outermost one.)
+    private func scrollToActive(_ prayer: Prayer?) {
+        guard let prayer else { return }
+        let edge: Edge = showTimePreview || prayer == .fajr || prayer == .zuhr ? .top : .bottom
+        Task {
+            try? await Task.sleep(for: .milliseconds(700))
+            withAnimation(.spring(duration: 0.8, bounce: 0.1)) {
+                scrollPosition.scrollTo(edge: edge)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 22)
-        .frame(maxWidth: .infinity)
-        .fixedSize(horizontal: false, vertical: true)
-        .glassEffect(.clear.interactive(), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 
     private var effectivePrayer: Prayer? { countdownManager.currentState?.phase.prayer }
     private var effectiveIsIqama: Bool { countdownManager.currentState?.phase.isIqamaPhase ?? false }
-
-    @ViewBuilder
-    private func countdownBody(prayer: Prayer, isIqama: Bool, countdownText: String,
-                                day: DailyPrayerTimes?, settings: AzanSettings?) -> some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 6) {
-                PulsingDot(color: isIqama ? Theme.accentGold : Theme.accentEmerald)
-                Text(isIqama ? "Iqama time" : "Next prayer")
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(1.4)
-                    .foregroundStyle(Theme.textSecondary)
-                    .textCase(.uppercase)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(prayer.displayName)
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Theme.textPrimary)
-                Text(prayer.arabicName)
-                    .font(.system(size: 20, weight: .regular))
-                    .foregroundStyle(Theme.textSecondary)
-            }
-            .contentTransition(.opacity)
-            .animation(windowActive ? .easeInOut(duration: 0.4) : nil, value: prayer.rawValue)
-
-            Text(countdownText)
-                .font(.system(size: 64, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.white)
-                .shadow(color: (isIqama ? Theme.accentGold : Theme.accentEmerald).opacity(0.55),
-                        radius: 14, x: 0, y: 0)
-                .contentTransition(.numericText())
-                .animation(windowActive ? .spring(duration: 0.35) : nil, value: countdownText)
-
-            if let day, let azan = day.prayerTime(for: prayer) {
-                HStack(spacing: 12) {
-                    Label {
-                        Text(azan, style: .time)
-                            .monospacedDigit()
-                    } icon: {
-                        Image(systemName: "sun.haze")
-                    }
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.textSecondary)
-
-                    if !isIqama, let settings {
-                        let iqamaMin = settings.iqamaMinutes(for: prayer, isFriday: day.isFriday)
-                        Text("·")
-                            .foregroundStyle(Theme.textMuted)
-                        Label("Iqama +\(iqamaMin)m", systemImage: "person.3.fill")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Theme.textSecondary)
-                    }
-                }
-            }
-        }
-    }
 
     private var errorBody: some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 36))
                 .foregroundStyle(Theme.accentGold)
+                .symbolEffect(.wiggle, options: .nonRepeating)
             Text("Unable to load prayer times")
                 .font(.headline)
                 .foregroundStyle(Theme.textPrimary)
             Button("Retry") { countdownManager.refresh() }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .tint(Theme.accentEmerald)
         }
     }
 
-    // MARK: - Prayer check-in
+    // MARK: - Control dock
+
+    /// The only glass on the screen: floating controls above the content. The live check-in
+    /// prompt morphs out of the same container when an answer is pending.
+    private var dock: some View {
+        GlassEffectContainer(spacing: 8) {
+            VStack(spacing: 10) {
+                if showTimePreview {
+                    TimePreviewPanel { showTimePreview = false }
+                        .glassEffect(.regular, in: .rect(cornerRadius: 24))
+                        .glassEffectID("preview", in: dockNamespace)
+                } else if let pending = checkIn.pendingCheckIn {
+                    checkInPrompt(pending)
+                }
+
+                HStack(spacing: 10) {
+                    Button(action: openLocationSettings) {
+                        Label(locationText, systemImage: "location.fill")
+                            .font(.system(size: 13, weight: .medium))
+                            .lineLimit(1)
+                            .padding(.horizontal, 4)
+                    }
+                    .buttonStyle(.glass)
+                    .glassEffectID("location", in: dockNamespace)
+
+                    Spacer(minLength: 0)
+
+                    // TestFlight and Debug builds only. Gold while a preview runs, so a shifted
+                    // clock is never mistaken for the real time.
+                    if previewClock.isAvailable {
+                        Button { showTimePreview.toggle() } label: {
+                            Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                .font(.system(size: 16, weight: .medium))
+                                .frame(width: 22, height: 22)
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .tint(previewClock.isActive ? Theme.accentGold : nil)
+                        .accessibilityLabel("Time preview")
+                        .glassEffectID("previewButton", in: dockNamespace)
+                    }
+
+                    Button { showCheckInSetup = true } label: {
+                        Image(systemName: "checkmark.seal")
+                            .font(.system(size: 16, weight: .medium))
+                            .frame(width: 22, height: 22)
+                    }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel("Prayer Check-in")
+                    .help(checkInStatusText)
+                    .glassEffectID("checkin", in: dockNamespace)
+
+                    Button(action: openSettings) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 16, weight: .medium))
+                            .frame(width: 22, height: 22)
+                    }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel("Settings")
+                    .glassEffectID("settings", in: dockNamespace)
+                }
+            }
+        }
+        .controlSize(.large)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 6)
+        .animation(.spring(duration: 0.5, bounce: 0.25), value: checkIn.pendingCheckIn)
+        .animation(.spring(duration: 0.5, bounce: 0.2), value: showTimePreview)
+    }
 
     /// Live, unanswered check-in: the in-app twin of the notification, with the answers
     /// inline (banners vanish in seconds unless the user switched the style to Alerts).
-    @ViewBuilder
-    private func checkInPendingCard(_ pending: NotificationManager.CheckInState) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: pending.awaitingConfirmation ? "questionmark.circle.fill" : "figure.walk.motion")
-                .font(.system(size: 18))
-                .foregroundStyle(Theme.accentGold)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(pending.awaitingConfirmation
-                     ? "Did you pray \(pending.prayer.displayName)?"
-                     : "\(pending.prayer.displayName) iqama is coming up")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Theme.textPrimary)
-                Text(pending.awaitingConfirmation
-                     ? "Confirm to stop the reminders."
-                     : "Commit now and the check-in stands down.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textSecondary)
-            }
-
-            Spacer()
-
-            Button("Later") { checkIn.snoozeCheckIn() }
-                .buttonStyle(.plain)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Theme.textSecondary)
-
-            Button(pending.awaitingConfirmation ? "Yes, Wallah" : "Wallah, going now") {
-                checkIn.confirmPrayed()
-            }
-            .buttonStyle(.glass(Glass.regular.tint(Theme.accentGold).interactive()))
-            .font(.system(size: 12, weight: .semibold))
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity)
-        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .transition(.opacity.combined(with: .move(edge: .top)))
-        .animation(.easeInOut(duration: 0.25), value: pending)
-    }
-
-    /// Main entry point for the feature: shows its live status, opens the onboarding sheet.
-    private var checkInCTACard: some View {
-        Button { showCheckInSetup = true } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 20))
+    private func checkInPrompt(_ pending: NotificationManager.CheckInState) -> some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: pending.awaitingConfirmation ? "questionmark.circle.fill" : "figure.walk.motion")
+                    .font(.system(size: 18))
                     .foregroundStyle(Theme.accentGold)
+                    .symbolEffect(.bounce, options: .repeat(2), value: pending)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Prayer Check-in")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    Text(pending.awaitingConfirmation
+                         ? "Did you pray \(pending.prayer.displayName)?"
+                         : "\(pending.prayer.displayName) iqama is coming up")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundStyle(Theme.textPrimary)
-                    Text(checkInStatusText)
-                        .font(.system(size: 11))
-                        .foregroundStyle(Theme.textMuted)
+                    Button("Remind me later") { checkIn.snoozeCheckIn() }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Theme.textSecondary)
                 }
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
 
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Theme.textMuted)
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity)
-            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .glassEffect(.regular, in: .capsule)
+            .glassEffectID("prompt", in: dockNamespace)
+
+            Button(pending.awaitingConfirmation ? "Yes, Wallah" : "Going now") {
+                checkIn.confirmPrayed()
+            }
+            .buttonStyle(.glassProminent)
+            .tint(Theme.accentGold)
+            // Dark text: white on the light gold tint is too faint to read.
+            .foregroundStyle(Color(red: 0.16, green: 0.11, blue: 0.02))
+            .font(.system(size: 13, weight: .semibold))
+            .glassEffectID("confirm", in: dockNamespace)
         }
-        .buttonStyle(.plain)
-        .glassEffect(.clear.interactive(), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private func openSettings() {
+        #if os(macOS)
+        openSettingsAction()
+        #else
+        showSettings = true
+        #endif
+    }
+
+    private func openLocationSettings() {
+        openSettings()
     }
 
     private var checkInStatusText: String {
@@ -376,147 +455,11 @@ struct ContentView: View {
         return enabled.joined(separator: ", ") + " · every \(nagInterval) min"
     }
 
-    // MARK: - Prayer rail
-
-    private var prayerRail: some View {
-        VStack(spacing: 0) {
-            ForEach(Prayer.orderedPrayers, id: \.self) { prayer in
-                prayerRow(prayer: prayer)
-                if prayer != .isha {
-                    Rectangle()
-                        .fill(Theme.cardStroke)
-                        .frame(height: 1)
-                        .padding(.horizontal, 16)
-                }
-            }
-        }
-        .clipShape(.rect(cornerRadius: 20, style: .continuous))
-        .glassEffect(.clear.interactive(), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func prayerRow(prayer: Prayer) -> some View {
-        let isCurrent = effectivePrayer == prayer
-        let times = countdownManager.currentState?.todayPrayerTimes
-        let settings = countdownManager.currentState?.azanSettings
-        let isIqamaPhase = effectiveIsIqama
-
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .stroke(Theme.cardStroke, lineWidth: 1)
-                    .frame(width: 22, height: 22)
-                if isCurrent {
-                    Circle()
-                        .fill(isIqamaPhase ? Theme.accentGold : Theme.accentEmerald)
-                        .frame(width: 10, height: 10)
-                        .shadow(color: (isIqamaPhase ? Theme.accentGold : Theme.accentEmerald).opacity(0.7),
-                                radius: 8, x: 0, y: 0)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(prayer.displayName)
-                    .font(.system(size: 14, weight: isCurrent ? .semibold : .regular, design: .rounded))
-                    .foregroundStyle(Theme.textPrimary)
-                Text(prayer.arabicName)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textMuted)
-            }
-
-            Spacer()
-
-            if let times, let settings, let azan = times.prayerTime(for: prayer) {
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text(azan, style: .time)
-                        .font(.system(size: 14, weight: isCurrent ? .semibold : .regular, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(isCurrent ? (isIqamaPhase ? Theme.accentGold : Theme.accentEmerald) : Theme.textPrimary)
-                    let iqamaMin = settings.iqamaMinutes(for: prayer, isFriday: times.isFriday)
-                    Text("+\(iqamaMin)m")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Theme.textMuted)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(isCurrent ? Color.white.opacity(0.06) : .clear)
-        .animation(.easeInOut(duration: 0.3), value: isCurrent)
-    }
-
-    // MARK: - Footer
-
-    private var footer: some View {
-        HStack {
-            Text(locationText)
-                .font(.caption)
-                .foregroundStyle(Theme.textMuted)
-
-            Spacer()
-
-            Button {
-                #if os(macOS)
-                openSettings()
-                #else
-                showSettings = true
-                #endif
-            } label: {
-                Label("Settings", systemImage: "gearshape")
-                    .font(.caption)
-                    .foregroundStyle(Theme.textSecondary)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
     private var locationText: String {
         if let t = countdownManager.currentState?.todayPrayerTimes {
-            return "\(t.areaNameEn) · \(t.emirateNameEn)"
+            return t.areaNameEn == t.emirateNameEn ? t.areaNameEn : "\(t.areaNameEn), \(t.emirateNameEn)"
         }
         return "Locating…"
-    }
-}
-
-private struct PulsingDot: View {
-    var color: Color
-    @State private var on = false
-    // A `repeatForever` animation keeps the render server busy indefinitely, even
-    // when the window is backgrounded. Gate it on the active state so it settles to
-    // a static dot the moment the window loses focus (macOS) / the app backgrounds (iOS).
-    #if os(macOS)
-    @Environment(\.controlActiveState) private var controlActiveState
-    private var isActive: Bool { controlActiveState != .inactive }
-    #else
-    @Environment(\.scenePhase) private var scenePhase
-    private var isActive: Bool { scenePhase == .active }
-    #endif
-
-    var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: 6, height: 6)
-            .shadow(color: color.opacity(0.8), radius: on ? 6 : 2)
-            .opacity(on ? 1.0 : 0.65)
-            .onAppear { setPulsing(isActive) }
-            #if os(macOS)
-            .onChange(of: controlActiveState) { _, state in setPulsing(state != .inactive) }
-            #else
-            .onChange(of: scenePhase) { _, phase in setPulsing(phase == .active) }
-            #endif
-    }
-
-    private func setPulsing(_ active: Bool) {
-        if active {
-            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
-                on = true
-            }
-        } else {
-            // A finite animation here replaces the repeating one, letting it stop.
-            withAnimation(.easeInOut(duration: 0.3)) {
-                on = false
-            }
-        }
     }
 }
 
@@ -552,14 +495,16 @@ struct UpdateBanner: View {
                     .tint(Theme.accentGold)
             } else {
                 Button(buttonLabel) { installer.install(update) }
-                    .buttonStyle(.glass(Glass.regular.tint(Theme.accentGold).interactive()))
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.accentGold)
                     .font(.system(size: 12, weight: .semibold))
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
-        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        // Content, not a control: a material card, so the button is the only glass here.
+        .background(.regularMaterial, in: .rect(cornerRadius: 16))
         .animation(.easeInOut(duration: 0.25), value: installer.phase)
     }
 

@@ -64,6 +64,15 @@ enum Theme {
     static let textSecondary = Color.white.opacity(0.72)
     static let textMuted = Color.white.opacity(0.50)
 
+    /// Silhouette colors for the horizon: the far city is lighter (atmospheric haze), the
+    /// near mosque and ground are close to black, both tinted by the current sky.
+    static func horizon(at date: Date) -> (far: Color, near: Color) {
+        let sky = sky(at: date)
+        return (mix(sky.bottom, .black, 0.55), mix(sky.bottom, .black, 0.82))
+    }
+
+    static func blend(_ a: Color, _ b: Color, _ f: Double) -> Color { mix(a, b, f) }
+
     // True when the sky is dark enough that stars should be visible.
     static func isNight(at date: Date) -> Bool {
         let cal = Calendar.current

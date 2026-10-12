@@ -41,10 +41,13 @@ class CountdownManager: ObservableObject {
 
     private func updateState() {
         do {
-            let now = Date()
-            let newState = try calculateCurrentPhase(at: now)
+            let preview = PreviewClock.shared
+            let newState = try calculateCurrentPhase(at: preview.now)
             currentState = newState
             error = nil
+
+            // A preview shows a shifted clock; notifications and the Live Activity follow real time.
+            guard !preview.isActive else { return }
 
             // Pre-iqama reminder + "did you pray?" nag loop
             NotificationManager.shared.tick(snapshot: newState)

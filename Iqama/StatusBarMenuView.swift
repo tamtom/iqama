@@ -35,11 +35,11 @@ struct StatusBarMenuView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)
                         .frame(maxWidth: .infinity)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .background(.thinMaterial, in: .rect(cornerRadius: 18))
                     prayerList
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(.thinMaterial, in: .rect(cornerRadius: 16))
                     footer
                 }
                 .padding(.horizontal, 14)

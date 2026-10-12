@@ -106,11 +106,29 @@ struct DailyPrayerTimes: Codable {
         return dateFormatter.date(from: timeString)
     }
 
+    /// Shurooq: the real sunrise, which anchors the daylight sky.
+    var sunriseTime: Date? {
+        dateFormatter.date(from: shurooq)
+    }
+
     var isFriday: Bool {
         dayofWeek == "Friday"
     }
 
     var hijriDateString: String {
-        "\(hijryDay) \(hijryMonthNameEn) \(hijryYear)"
+        "\(hijryDay) \(hijriMonthName) \(hijryYear)"
+    }
+
+    /// Readable transliteration; the Awqaf feed spells months as "JamadAlAwal".
+    var hijriMonthName: String {
+        let names = ["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Ula",
+                     "Jumada al-Akhirah", "Rajab", "Sha'ban", "Ramadan", "Shawwal",
+                     "Dhu al-Qi'dah", "Dhu al-Hijjah"]
+        return (1...12).contains(hijryMonth) ? names[hijryMonth - 1] : hijryMonthNameEn
+    }
+
+    /// Fraction of the lunar cycle (0 = new moon, 0.5 = full), from the Hijri day.
+    var moonPhase: Double {
+        (Double(max(1, hijryDay)) - 0.5) / 29.53
     }
 }
