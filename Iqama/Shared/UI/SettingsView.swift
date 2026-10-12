@@ -58,7 +58,16 @@ struct SettingsView: View {
     @AppStorage(AppSettings.Keys.nagIsha) private var nagIsha = AppSettings.Defaults.nagIsha
     @AppStorage(AppSettings.Keys.nagIntervalMinutes) private var nagInterval = AppSettings.Defaults.nagIntervalMinutes
 
+    // Adhan at the azan time (main-app standard defaults)
+    @AppStorage(AppSettings.Keys.adhanSound) private var adhanSound = AppSettings.Defaults.adhanSound
+    @AppStorage(AppSettings.Keys.adhanFajr) private var adhanFajr = AppSettings.Defaults.adhanPrayer
+    @AppStorage(AppSettings.Keys.adhanZuhr) private var adhanZuhr = AppSettings.Defaults.adhanPrayer
+    @AppStorage(AppSettings.Keys.adhanAsr) private var adhanAsr = AppSettings.Defaults.adhanPrayer
+    @AppStorage(AppSettings.Keys.adhanMaghrib) private var adhanMaghrib = AppSettings.Defaults.adhanPrayer
+    @AppStorage(AppSettings.Keys.adhanIsha) private var adhanIsha = AppSettings.Defaults.adhanPrayer
+
     @ObservedObject private var location = LocationManager.shared
+    @ObservedObject private var adhanPlayer = AdhanPlayer.shared
 
     private var isManual: Bool { locationMode == AppSettings.LocationMode.manual.rawValue }
 
@@ -67,6 +76,7 @@ struct SettingsView: View {
             locationSection
             if !isUAE { methodSection }
             iqamaSection
+            adhanSection
             notificationsSection
             nagSection
             Section {
@@ -85,6 +95,8 @@ struct SettingsView: View {
         .frame(minHeight: 420, idealHeight: 620, maxHeight: .infinity)
         #endif
         .navigationTitle("Iqama")
+        // A preview must not continue after the user leaves Settings.
+        .onDisappear { if adhanPlayer.playing != nil { adhanPlayer.stop() } }
     }
 
     // MARK: - Sections
@@ -169,6 +181,58 @@ struct SettingsView: View {
             }
         }
         .onChange(of: value.wrappedValue) { _, _ in applyLocationChange() }
+    }
+
+    private var adhanSection: some View {
+        Section {
+            Picker("Voice", selection: $adhanSound) {
+                ForEach(AdhanSound.allCases) { Text($0.displayName).tag($0.rawValue) }
+            }
+            .onChange(of: adhanSound) { _, value in
+                // Play the new choice, so the user hears it at once.
+                if let sound = AdhanSound(rawValue: value) { adhanPlayer.play(sound) }
+            }
+            Button {
+                if adhanPlayer.playing != nil {
+                    adhanPlayer.stop()
+                } else if let sound = AdhanSound(rawValue: adhanSound) {
+                    adhanPlayer.play(sound)
+                }
+            } label: {
+                Label(adhanPlayer.playing != nil ? "Stop" : "Play",
+                      systemImage: adhanPlayer.playing != nil ? "stop.fill" : "play.fill")
+            }
+
+            Toggle("Fajr", isOn: $adhanFajr)
+            Toggle("Dhuhr", isOn: $adhanZuhr)
+            Toggle("Asr", isOn: $adhanAsr)
+            Toggle("Maghrib", isOn: $adhanMaghrib)
+            Toggle("Isha", isOn: $adhanIsha)
+
+            DisclosureGroup("Recordings") {
+                ForEach(AdhanSound.allCases) { sound in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(sound.displayName).font(.subheadline.weight(.medium))
+                        Text("“\(sound.credit.title)” by \(sound.credit.author), \(sound.credit.license)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Link("Source", destination: sound.credit.source)
+                            .font(.caption)
+                    }
+                }
+                Text("The app shortens, fades, and normalizes the recordings.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Adhan")
+        } footer: {
+            #if os(iOS)
+            Text("The Adhan plays at the azan time of each prayer that is on. When the app is closed, iOS plays the first part with the notification. When the app is open, the full Adhan plays.")
+            #else
+            Text("The full Adhan plays at the azan time of each prayer that is on, while Iqama runs in the menu bar.")
+            #endif
+        }
     }
 
     private var notificationsSection: some View {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The full-screen living sky behind the main screen: a slowly breathing mesh gradient in the
-/// time-of-day palette, light and rays from the sun or moon, drifting clouds, golden dust and
+/// time-of-day palette, light from the sun or moon, drifting clouds, golden dust and
 /// birds by day, and twinkling stars with the odd shooting star by night.
 ///
 /// Each layer redraws only as often as it moves. A `Canvas` redraws every time its parent
@@ -71,7 +71,7 @@ struct SkyScene: View {
 
 }
 
-/// The sky itself at 10 fps: the mesh, the light of the sun or moon, the rays, and the clouds.
+/// The sky itself at 10 fps: the mesh, the light of the sun or moon, and the clouds.
 /// Everything here moves slowly, so 10 fps looks smooth.
 private struct SkyLight: View {
     var source: CGPoint
@@ -113,11 +113,6 @@ private struct SkyLight: View {
                 )
                 .blendMode(.screen)
 
-                if bodyIsDay && sky.light > 0.2 {
-                    SunRays(time: t, origin: source, color: sky.glow)
-                        .opacity(0.25 + 0.6 * sky.warmth)
-                        .blendMode(.screen)
-                }
 
                 if sky.light > 0.25 {
                     CloudLayer(time: t, tint: Theme.blend(.white, sky.glow, 0.3 + 0.5 * sky.warmth))
@@ -187,43 +182,6 @@ private struct SkyLife: View {
                 }
                 if meteors {
                     ShootingStars(time: t)
-                }
-            }
-        }
-    }
-}
-
-/// Soft rays that turn slowly around the sun. They are faint at noon and strong in the warm
-/// light of Asr and sunset (the caller sets the opacity).
-private struct SunRays: View {
-    var time: Double
-    var origin: CGPoint
-    var color: Color
-
-    var body: some View {
-        Canvas { gc, size in
-            let length = max(size.width, size.height) * 1.2
-            let shading = GraphicsContext.Shading.radialGradient(
-                Gradient(colors: [color, color.opacity(0)]),
-                center: origin, startRadius: 0, endRadius: length * 0.7)
-            for i in 0..<12 {
-                let seed = Double(i)
-                let angle = seed * 2.399 + time * 0.012 + sin(time * 0.05 + seed) * 0.06
-                let spread = 0.03 + 0.03 * abs(sin(seed * 3.1))
-                let alpha = 0.12 + 0.18 * (0.5 + 0.5 * sin(time * 0.25 + seed * 5))
-                // Three nested wedges give the ray a soft edge without a costly blur filter.
-                for layer in 1...3 {
-                    let half = spread * Double(layer) / 3
-                    var ray = Path()
-                    ray.move(to: origin)
-                    ray.addLine(to: CGPoint(x: origin.x + cos(angle - half) * length,
-                                            y: origin.y + sin(angle - half) * length))
-                    ray.addLine(to: CGPoint(x: origin.x + cos(angle + half) * length,
-                                            y: origin.y + sin(angle + half) * length))
-                    ray.closeSubpath()
-                    var wedge = gc
-                    wedge.opacity = alpha / 3
-                    wedge.fill(ray, with: shading)
                 }
             }
         }

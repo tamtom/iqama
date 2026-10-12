@@ -22,6 +22,14 @@ enum AppSettings {
         static let nagResolvedWindow = "nagResolvedWindow"  // last prayer window confirmed prayed
         static let checkInOnboarded = "checkInOnboarded"    // saw the Prayer Check-in intro sheet
 
+        // Adhan at the azan time
+        static let adhanSound = "adhanSound"                // AdhanSound.rawValue
+        static let adhanFajr = "adhanFajr"
+        static let adhanZuhr = "adhanZuhr"
+        static let adhanAsr = "adhanAsr"
+        static let adhanMaghrib = "adhanMaghrib"
+        static let adhanIsha = "adhanIsha"
+
         // Location
         static let locationConfirmed = "locationConfirmed"  // user finished first-run setup
         static let locationMode = "locationMode"            // "auto" | "manual"
@@ -57,6 +65,9 @@ enum AppSettings {
         static let nagMaghrib = false
         static let nagIsha = false
         static let nagIntervalMinutes = 15
+
+        static let adhanSound = "serene"   // AdhanSound.serene
+        static let adhanPrayer = true   // the Adhan plays for every prayer until the user turns one off
 
         static let locationMode = "auto"
         static let selectedEmirate = Emirate.dubai.slug
@@ -131,6 +142,23 @@ enum AppSettings {
     static var nagResolvedWindow: String? {
         get { notif.string(forKey: Keys.nagResolvedWindow) }
         set { notif.set(newValue, forKey: Keys.nagResolvedWindow) }
+    }
+
+    // MARK: - Adhan
+
+    static func adhanKey(for prayer: Prayer) -> String {
+        switch prayer {
+        case .fajr: return Keys.adhanFajr
+        case .zuhr: return Keys.adhanZuhr
+        case .asr: return Keys.adhanAsr
+        case .maghrib: return Keys.adhanMaghrib
+        case .isha: return Keys.adhanIsha
+        }
+    }
+
+    /// Whether the Adhan plays (and the azan alert shows) at this prayer's azan time.
+    static func adhanEnabled(for prayer: Prayer) -> Bool {
+        notif.object(forKey: adhanKey(for: prayer)) as? Bool ?? Defaults.adhanPrayer
     }
 
     // MARK: - Location

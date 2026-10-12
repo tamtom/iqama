@@ -8,6 +8,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var countdownManager = CountdownManager.shared
     @ObservedObject private var checkIn = NotificationManager.shared
+    @ObservedObject private var adhan = AdhanPlayer.shared
     #if os(macOS)
     @StateObject private var updateChecker = UpdateChecker.shared
     @Environment(\.openSettings) private var openSettingsAction
@@ -241,13 +242,11 @@ struct ContentView: View {
                 title: snapshot.phase.prayer == .zuhr && snapshot.todayPrayerTimes?.isFriday == true
                     ? "Jumu'ah" : snapshot.phase.prayer.displayName,
                 isIqama: snapshot.phase.isIqamaPhase,
-                progress: progress(for: snapshot),
                 // Live seconds only while the window is being looked at; a backgrounded
                 // window shows a static minute-resolution value so the per-second string
                 // churn (and its display-list interpolation) stops entirely.
                 countdown: windowActive ? snapshot.formattedTimeRemaining : snapshot.shortFormattedTime,
                 remaining: snapshot.timeRemaining,
-                targetTime: snapshot.phase.targetTime,
                 live: windowActive
             )
             .overlay {
@@ -267,25 +266,6 @@ struct ContentView: View {
                 .tint(.white)
                 .frame(height: 280)
         }
-    }
-
-    /// How far the countdown is through its interval: from azan to iqama, or from the
-    /// previous prayer's iqama to this azan.
-    private func progress(for snapshot: CountdownSnapshot) -> Double {
-        let phase = snapshot.phase
-        let start: Date?
-        if phase.isIqamaPhase {
-            start = snapshot.todayPrayerTimes?.prayerTime(for: phase.prayer)
-        } else {
-            // Fajr's previous prayer is the isha of the day before the target.
-            let anchor = phase.prayer == .fajr ? phase.targetTime.addingTimeInterval(-86_400) : phase.targetTime
-            start = (try? PrayerTimesService.shared.getAllPrayerTimes(for: anchor))?
-                .first { $0.prayer == phase.prayer.previous }?.iqamaTime
-        }
-        guard let start else { return 0 }
-        let total = phase.targetTime.timeIntervalSince(start)
-        guard total > 0 else { return 1 }
-        return min(max(1 - snapshot.timeRemaining / total, 0), 1)
     }
 
     /// Keeps the current prayer's row in view above the dock. Fajr and Zuhr sit near the top of
@@ -334,6 +314,17 @@ struct ContentView: View {
                         .glassEffectID("preview", in: dockNamespace)
                 } else if let pending = checkIn.pendingCheckIn {
                     checkInPrompt(pending)
+                }
+
+                if adhan.playing != nil {
+                    Button { adhan.stop() } label: {
+                        Label("Stop Adhan", systemImage: "speaker.slash.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .padding(.horizontal, 6)
+                    }
+                    .buttonStyle(.glass)
+                    .tint(Theme.accentGold)
+                    .glassEffectID("adhan", in: dockNamespace)
                 }
 
                 HStack(spacing: 10) {
@@ -391,6 +382,7 @@ struct ContentView: View {
         .padding(.bottom, 6)
         .animation(.spring(duration: 0.5, bounce: 0.25), value: checkIn.pendingCheckIn)
         .animation(.spring(duration: 0.5, bounce: 0.2), value: showTimePreview)
+        .animation(.spring(duration: 0.5, bounce: 0.2), value: adhan.playing)
     }
 
     /// Live, unanswered check-in: the in-app twin of the notification, with the answers

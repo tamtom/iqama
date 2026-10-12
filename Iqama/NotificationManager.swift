@@ -280,6 +280,33 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         deliver(content, identifier: "iqama-\(prayer.rawValue)-\(Date().timeIntervalSince1970)")
     }
 
+    // MARK: - Azan alert
+
+    /// The alert at a prayer's azan time. On iOS its sound is the short Adhan clip, because iOS
+    /// plays at most 30 seconds of a notification sound. While the app is open, `AdhanPlayer`
+    /// plays the full Adhan, and the alert shows without its sound.
+    private static func azanContent(for prayer: Prayer, iqamaMinutes: Int) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = "\(prayer.displayName) Azan"
+        content.body = iqamaMinutes > 0
+            ? "\(prayer.arabicName) — iqama in \(iqamaMinutes) minute\(iqamaMinutes == 1 ? "" : "s")."
+            : prayer.arabicName
+        content.interruptionLevel = .timeSensitive
+        #if os(iOS)
+        content.sound = UNNotificationSound(named: AppSettings.adhanSound.alertSoundName)
+        #endif
+        return content
+    }
+
+    #if os(macOS)
+    /// macOS: the menu bar app runs all the time, so `AdhanPlayer` plays the full Adhan. This
+    /// banner has no sound.
+    func postAzanBanner(for prayer: Prayer, iqamaMinutes: Int) {
+        let content = Self.azanContent(for: prayer, iqamaMinutes: iqamaMinutes)
+        deliver(content, identifier: "azan-\(prayer.rawValue)-\(Date().timeIntervalSince1970)")
+    }
+    #endif
+
     private func deliver(_ content: UNNotificationContent, identifier: String) {
         // iOS suspends the app, so the per-second tick can't deliver on time. There the scheduled
         // requests from `scheduleUpcoming()` deliver instead, and the tick only drives the in-app card.
@@ -299,6 +326,11 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // The open app plays the full Adhan itself, so the azan alert's short clip stays silent.
+        if notification.request.identifier.hasPrefix("azan-") {
+            completionHandler([.banner, .list])
+            return
+        }
         completionHandler([.banner, .sound])
     }
 
@@ -339,7 +371,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     #if os(iOS)
     // MARK: - Scheduled delivery (iOS)
 
-    private static let scheduledPrefixes = ["iqama-", "nag-confirm-"]
+    private static let scheduledPrefixes = ["azan-", "iqama-", "nag-confirm-"]
     /// iOS keeps at most 64 pending requests per app; leave room for the system.
     private static let maxScheduled = 60
     private static let maxAsksPerPrayer = 8
@@ -365,7 +397,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         let now = Date()
         lastPlanCheck = now
         let plan = plannedNotifications(now: now)
-        let signature = plan.map { "\($0.id)@\(Int($0.date.timeIntervalSince1970))" }.joined(separator: ",")
+        // The sound is in the signature, so a new Adhan choice replaces the pending azan alerts.
+        let signature = AppSettings.adhanSound.rawValue + ";"
+            + plan.map { "\($0.id)@\(Int($0.date.timeIntervalSince1970))" }.joined(separator: ",")
         guard force || signature != lastPlanSignature else { return }
         lastPlanSignature = signature
 
@@ -386,7 +420,6 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     }
 
     private func plannedNotifications(now: Date) -> [PlannedNotification] {
-        guard AppSettings.notificationsEnabled else { return [] }
         let calendar = Calendar.current
 
         // Yesterday too: its isha window can still be open after midnight.
@@ -402,6 +435,15 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         var plan: [PlannedNotification] = []
         for (index, w) in windows.enumerated() {
             let key = Self.windowKey(for: w.prayer, on: w.day)
+
+            // The azan alert has its own switch for each prayer, apart from the iqama reminders.
+            if AppSettings.adhanEnabled(for: w.prayer), w.azan > now {
+                let gap = Int(w.iqama.timeIntervalSince(w.azan) / 60)
+                plan.append(PlannedNotification(id: "azan-\(key)", date: w.azan,
+                                                content: Self.azanContent(for: w.prayer, iqamaMinutes: gap)))
+            }
+            guard AppSettings.notificationsEnabled else { continue }
+
             let nagging = AppSettings.nagEnabled(for: w.prayer) && AppSettings.nagResolvedWindow != key
 
             // Same rule as the tick: a lead longer than the azan → iqama gap reminds at the azan.

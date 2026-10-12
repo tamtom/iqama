@@ -3,6 +3,7 @@ import SwiftUI
 
 struct StatusBarMenuView: View {
     @StateObject private var countdownManager = CountdownManager.shared
+    @ObservedObject private var adhan = AdhanPlayer.shared
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
@@ -167,6 +168,15 @@ struct StatusBarMenuView: View {
 
     private var footer: some View {
         HStack(spacing: 16) {
+            if adhan.playing != nil {
+                Button { adhan.stop() } label: {
+                    Label("Stop Adhan", systemImage: "speaker.slash.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Theme.accentGold)
+            }
+
             Button {
                 NSApp.activate(ignoringOtherApps: true)
                 if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {

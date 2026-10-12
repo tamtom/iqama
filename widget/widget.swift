@@ -13,7 +13,6 @@ struct PrayerTimelineEntry: TimelineEntry {
     let prayer: Prayer
     let isIqamaPhase: Bool
     let targetTime: Date              // azan or iqama, whichever comes next
-    let intervalStart: Date           // the previous event: where the ring starts
     let azanTime: Date
     let iqamaTime: Date
     let hijriDate: String
@@ -21,12 +20,6 @@ struct PrayerTimelineEntry: TimelineEntry {
     let sky: SkyColors
     let bodyNormalizedX: Double       // sun/moon position along its arc [0,1]
     let bodyIsDay: Bool
-
-    var progress: Double {
-        let total = targetTime.timeIntervalSince(intervalStart)
-        guard total > 0 else { return 1 }
-        return min(max(date.timeIntervalSince(intervalStart) / total, 0), 1)
-    }
 
     var accent: Color { isIqamaPhase ? Theme.accentGold : Theme.accentEmerald }
 
@@ -36,7 +29,6 @@ struct PrayerTimelineEntry: TimelineEntry {
         return PrayerTimelineEntry(
             date: now, prayer: .asr, isIqamaPhase: false,
             targetTime: target,
-            intervalStart: now.addingTimeInterval(-150 * 60),
             azanTime: target,
             iqamaTime: target.addingTimeInterval(20 * 60),
             hijriDate: "1 Jumada al-Ula 1448",
@@ -59,15 +51,13 @@ struct PrayerTimelineProvider: TimelineProvider {
         completion(createEntry(for: Date()) ?? .placeholder)
     }
 
-    /// Entries every 5 minutes for 2 hours, then every 15 minutes up to 6 hours, plus one at
-    /// each azan and iqama. The sky, the sun, and the ring follow the time; the countdown
-    /// text runs live between entries.
+    /// Entries every 15 minutes for 6 hours, plus one at each azan and iqama. The sky and the
+    /// sun follow the time; the countdown text runs live between entries.
     func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerTimelineEntry>) -> Void) {
         let now = Date()
         let horizon = now.addingTimeInterval(6 * 3600)
         var dates: Set<Date> = [now]
-        for minutes in stride(from: 5, through: 120, by: 5) { dates.insert(now.addingTimeInterval(Double(minutes) * 60)) }
-        for minutes in stride(from: 135, through: 360, by: 15) { dates.insert(now.addingTimeInterval(Double(minutes) * 60)) }
+        for minutes in stride(from: 15, through: 360, by: 15) { dates.insert(now.addingTimeInterval(Double(minutes) * 60)) }
 
         var cursor = now
         for _ in 0..<12 {
@@ -88,22 +78,13 @@ struct PrayerTimelineProvider: TimelineProvider {
         let isIqama = date >= azan && date < iqama
         let target = isIqama ? iqama : azan
 
-        // The ring runs from the previous event: the azan in the iqama phase, else the
-        // previous prayer's iqama (for Fajr, Isha of the day before).
-        var start = azan
-        if !isIqama {
-            let anchor = prayer == .fajr ? azan.addingTimeInterval(-86_400) : azan
-            start = (try? service.getAllPrayerTimes(for: anchor))?
-                .first { $0.prayer == prayer.previous }?.iqamaTime ?? date
-        }
-
         let sunrise = day.sunriseTime ?? day.prayerTime(for: .fajr).map { $0.addingTimeInterval(80 * 60) }
         let sunset = day.prayerTime(for: .maghrib)
         let body = SkyGeometry.bodyNormalized(at: date, sunrise: sunrise, sunset: sunset)
 
         return PrayerTimelineEntry(
             date: date, prayer: prayer, isIqamaPhase: isIqama,
-            targetTime: target, intervalStart: start,
+            targetTime: target,
             azanTime: azan, iqamaTime: iqama,
             hijriDate: day.hijriDateString,
             day: day,
@@ -300,36 +281,6 @@ private struct TargetLine: View {
     }
 }
 
-/// The app's ring: a track and the part of the interval that has passed, with a glowing head.
-private struct WidgetRing: View {
-    let entry: PrayerTimelineEntry
-    var line: CGFloat = 6
-    @Environment(\.widgetRenderingMode) private var renderingMode
-
-    var body: some View {
-        let progress = entry.progress
-        ZStack {
-            if renderingMode == .fullColor {
-                Circle()
-                    .fill(Color(red: 0.02, green: 0.06, blue: 0.16).opacity(0.35))
-                    .padding(line)
-            }
-            Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: line)
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(AngularGradient(colors: [entry.accent.opacity(0.3), entry.accent, Theme.glowSoft],
-                                        center: .center,
-                                        startAngle: .degrees(0), endAngle: .degrees(360 * max(progress, 0.01))),
-                        style: StrokeStyle(lineWidth: line, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-                .shadow(color: entry.accent.opacity(0.5), radius: 6)
-                .widgetAccentable()
-        }
-        .padding(line / 2)
-    }
-}
-
 private struct PrayerList: View {
     let entry: PrayerTimelineEntry
     var rowSpacing: CGFloat = 3
@@ -406,6 +357,8 @@ private extension Prayer {
 
 struct SmallWidgetView: View {
     let entry: PrayerTimelineEntry
+    /// The medium widget lists the times beside it, so it leaves this line out.
+    var showsTarget = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -418,7 +371,7 @@ struct SmallWidgetView: View {
             PrayerTitle(entry: entry, size: 16)
                 .padding(.top, 4)
             Countdown(entry: entry, size: 30)
-            TargetLine(entry: entry)
+            if showsTarget { TargetLine(entry: entry) }
             Spacer(minLength: 0)
         }
     }
@@ -431,7 +384,7 @@ struct MediumWidgetView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            SmallWidgetView(entry: entry)
+            SmallWidgetView(entry: entry, showsTarget: false)
                 .frame(maxWidth: .infinity, alignment: .leading)
             PrayerList(entry: entry, rowSpacing: 1, showArabic: false)
                 .frame(width: 168)
@@ -441,7 +394,7 @@ struct MediumWidgetView: View {
 
 // MARK: - Large
 
-/// The app's main screen in small: the date, the ring with the sun or moon on its orbit, the
+/// The app's main screen in small: the date, the countdown with the sun or moon on its orbit, the
 /// skyline, and today's prayers on the ground below it.
 struct LargeWidgetView: View {
     let entry: PrayerTimelineEntry
@@ -465,7 +418,9 @@ struct LargeWidgetView: View {
             ZStack {
                 SkyArcView(date: entry.date, todayPrayerTimes: entry.day, activePrayer: entry.prayer,
                            bodySize: 20, orbit: true, orbitGap: 16, interactive: false)
-                WidgetRing(entry: entry)
+                Circle()
+                    .fill(RadialGradient(colors: [Color(red: 0.02, green: 0.06, blue: 0.16).opacity(0.38), .clear],
+                                         center: .center, startRadius: 0, endRadius: 64))
                 VStack(spacing: 2) {
                     PhaseLabel(entry: entry)
                     Countdown(entry: entry, size: 26)
