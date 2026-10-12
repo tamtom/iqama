@@ -87,6 +87,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
 final class IOSAppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        BackgroundRefresh.register()
         AppBootstrap.performCommonStartup()
         return true
     }

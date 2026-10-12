@@ -67,7 +67,7 @@
 				8BB42D9F2F2222220043A040 /* Exceptions for "Iqama" folder in "Dubai iqama" target */,
 			);
 			explicitFolders = (
-				prayer_times_2026,
+				prayer_times,
 			);
 			path = Iqama;
 			sourceTree = "<group>";

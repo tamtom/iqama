@@ -15,7 +15,8 @@ protocol PrayerDataProvider {
 }
 
 /// UAE source: reads bundled static Awqaf JSON for one emirate from
-/// `prayer_times_2026/<slug>/month_NN.json`. Data is 2026-only.
+/// `prayer_times/<year>/<slug>/month_NN.json`. `Scripts/fetch-awqaf.py` downloads a year; Awqaf
+/// publishes by Hijri year, so the newest bundled year can end mid-month.
 struct BundledAwqafProvider: PrayerDataProvider {
     let emirate: Emirate
 
@@ -24,17 +25,12 @@ struct BundledAwqafProvider: PrayerDataProvider {
 
     func monthData(year: Int, month: Int) throws -> PrayerTimesMonthData {
         let filename = String(format: "month_%02d", month)
-        let subdir = "prayer_times_2026/\(emirate.slug)"
+        let subdir = "prayer_times/\(year)/\(emirate.slug)"
 
-        // Folder reference bundles the tree verbatim, so the subdirectory lookup is primary.
-        var url = Bundle.main.url(forResource: filename, withExtension: "json", subdirectory: subdir)
-        // Fallbacks (older flat layout / Resources-prefixed) just in case.
-        if url == nil {
-            url = Bundle.main.url(forResource: filename, withExtension: "json",
-                                  subdirectory: "Resources/\(subdir)")
-        }
-
-        guard let fileURL = url else {
+        // The folder reference bundles the tree verbatim, so a missing file means the bundle
+        // has no data for that month (never fall back to another year's file).
+        guard let fileURL = Bundle.main.url(forResource: filename, withExtension: "json",
+                                            subdirectory: subdir) else {
             throw PrayerTimesError.fileNotFound(month: month)
         }
 

@@ -84,6 +84,12 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             if let error = error {
                 print("Notification permission error: \(error)")
             }
+            #if os(iOS)
+            // Requests added before the user answered were dropped; schedule them again.
+            if granted {
+                DispatchQueue.main.async { self.scheduleUpcoming(force: true) }
+            }
+            #endif
             if let completion {
                 DispatchQueue.main.async { completion(granted) }
             }
@@ -112,6 +118,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     // MARK: - Per-second tick (from CountdownManager, main thread)
 
     func tick(snapshot: CountdownSnapshot) {
+        #if os(iOS)
+        scheduleUpcomingIfDue()
+        #endif
         guard AppSettings.notificationsEnabled else {
             hasNotifiedForCurrentIqama = false
             lastNotifiedPrayer = nil
@@ -184,6 +193,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         guard var w = window, !w.resolved else { return }
         w.resolved = true
         AppSettings.nagResolvedWindow = w.key  // survives relaunch — don't re-nag
+        #if os(iOS)
+        cancelScheduled(forKey: w.key)
+        #endif
         if !w.deliveredIDs.isEmpty {
             UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: w.deliveredIDs)
             w.deliveredIDs = []
@@ -222,7 +234,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             lastNotifiedPrayer = nil
             return
         }
-        let lead = AppSettings.notificationLeadMinutes
+        let setting = AppSettings.notificationLeadMinutes
 
         guard case .waitingForIqama(let prayer, _) = snapshot.phase else {
             // Reset when not in iqama phase
@@ -230,6 +242,11 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             lastNotifiedPrayer = nil
             return
         }
+
+        // A lead longer than the azan → iqama gap (Maghrib's 5 min) reminds at the azan instead.
+        let gap = snapshot.azanSettings?.iqamaMinutes(for: prayer, isFriday: snapshot.todayPrayerTimes?.isFriday ?? false) ?? setting
+        let lead = min(setting, gap)
+        guard lead > 0 else { return }
 
         // Already fired for this prayer at the current lead setting.
         if hasNotifiedForCurrentIqama && lastNotifiedPrayer == prayer && lastNotifiedLead == lead {
@@ -264,12 +281,16 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     }
 
     private func deliver(_ content: UNNotificationContent, identifier: String) {
+        // iOS suspends the app, so the per-second tick can't deliver on time. There the scheduled
+        // requests from `scheduleUpcoming()` deliver instead, and the tick only drives the in-app card.
+        #if os(macOS)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("Failed to send notification: \(error)")
             }
         }
+        #endif
     }
 
     // MARK: - UNUserNotificationCenterDelegate
@@ -293,6 +314,16 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     }
 
     private func handleResponse(action: String, windowKey: String?) {
+        #if os(iOS)
+        // The action can relaunch the app before the first tick rebuilds `window`. The answer
+        // must still stop that window's scheduled asks.
+        if let windowKey, action == ActionID.goingToPray || action == ActionID.prayedYes,
+           window?.key != windowKey {
+            AppSettings.nagResolvedWindow = windowKey
+            cancelScheduled(forKey: windowKey)
+            return
+        }
+        #endif
         // Responses from stale windows (yesterday's banner, a prayer whose window ended) are moot.
         guard let windowKey, let w = window, w.key == windowKey else { return }
         switch action {
@@ -304,6 +335,124 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             break  // clicked the banner body or dismissed — counts as no response
         }
     }
+
+    #if os(iOS)
+    // MARK: - Scheduled delivery (iOS)
+
+    private static let scheduledPrefixes = ["iqama-", "nag-confirm-"]
+    /// iOS keeps at most 64 pending requests per app; leave room for the system.
+    private static let maxScheduled = 60
+    private static let maxAsksPerPrayer = 8
+
+    private var lastPlanSignature: String?
+    private var lastPlanCheck = Date.distantPast
+
+    private struct PlannedNotification {
+        let id: String
+        let date: Date
+        let content: UNMutableNotificationContent
+    }
+
+    private func scheduleUpcomingIfDue() {
+        guard Date().timeIntervalSince(lastPlanCheck) >= 10 else { return }
+        scheduleUpcoming()
+    }
+
+    /// Replace the pending pre-iqama reminders and "did you pray?" asks with the plan for the
+    /// next prayers. Cheap to call often: it only touches the pending requests when the plan
+    /// changes, unless `force` is set (the permission or the system settings can change too).
+    func scheduleUpcoming(force: Bool = false) {
+        let now = Date()
+        lastPlanCheck = now
+        let plan = plannedNotifications(now: now)
+        let signature = plan.map { "\($0.id)@\(Int($0.date.timeIntervalSince1970))" }.joined(separator: ",")
+        guard force || signature != lastPlanSignature else { return }
+        lastPlanSignature = signature
+
+        let center = UNUserNotificationCenter.current()
+        let wanted = Set(plan.map(\.id))
+        center.getPendingNotificationRequests { pending in
+            let stale = pending.map(\.identifier).filter { id in
+                Self.scheduledPrefixes.contains(where: id.hasPrefix) && !wanted.contains(id)
+            }
+            center.removePendingNotificationRequests(withIdentifiers: stale)
+            let calendar = Calendar.current
+            for item in plan {
+                let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: item.date)
+                let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+                center.add(UNNotificationRequest(identifier: item.id, content: item.content, trigger: trigger))
+            }
+        }
+    }
+
+    private func plannedNotifications(now: Date) -> [PlannedNotification] {
+        guard AppSettings.notificationsEnabled else { return [] }
+        let calendar = Calendar.current
+
+        // Yesterday too: its isha window can still be open after midnight.
+        var windows: [(prayer: Prayer, azan: Date, iqama: Date, day: Date)] = []
+        for offset in -1...2 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: now),
+                  let times = try? PrayerTimesService.shared.getAllPrayerTimes(for: day) else { continue }
+            windows += times.map { (prayer: $0.prayer, azan: $0.azanTime, iqama: $0.iqamaTime, day: day) }
+        }
+        windows.sort { $0.azan < $1.azan }
+
+        let lead = AppSettings.notificationLeadMinutes
+        var plan: [PlannedNotification] = []
+        for (index, w) in windows.enumerated() {
+            let key = Self.windowKey(for: w.prayer, on: w.day)
+            let nagging = AppSettings.nagEnabled(for: w.prayer) && AppSettings.nagResolvedWindow != key
+
+            // Same rule as the tick: a lead longer than the azan → iqama gap reminds at the azan.
+            let minutes = min(lead, Int(w.iqama.timeIntervalSince(w.azan) / 60))
+            let reminderAt = w.iqama.addingTimeInterval(-TimeInterval(minutes * 60))
+            if minutes > 0, reminderAt > now {
+                let content = UNMutableNotificationContent()
+                content.title = "\(w.prayer.displayName) Iqama"
+                content.body = "\(minutes) minute\(minutes == 1 ? "" : "s") until \(w.prayer.displayName) Iqama"
+                content.sound = .default
+                content.interruptionLevel = .timeSensitive
+                if nagging {
+                    content.categoryIdentifier = CategoryID.preIqama
+                    content.userInfo = ["windowKey": key]
+                }
+                plan.append(PlannedNotification(id: "iqama-\(key)", date: reminderAt, content: content))
+            }
+
+            // Asks at iqama + n × interval until the next prayer's azan closes the window.
+            guard nagging, nagInterval > 0, index + 1 < windows.count else { continue }
+            let windowEnd = windows[index + 1].azan
+            for ask in 1...Self.maxAsksPerPrayer {
+                let askAt = w.iqama.addingTimeInterval(nagInterval * Double(ask))
+                guard askAt < windowEnd else { break }
+                guard askAt > now else { continue }
+                let content = UNMutableNotificationContent()
+                content.title = "Did you pray \(w.prayer.displayName)?"
+                content.body = "\(w.prayer.arabicName) — confirm to stop the reminders, or I'll check again in \(AppSettings.nagIntervalMinutes) min."
+                content.sound = .default
+                content.interruptionLevel = .timeSensitive
+                content.categoryIdentifier = CategoryID.didYouPray
+                content.userInfo = ["windowKey": key]
+                plan.append(PlannedNotification(id: "nag-confirm-\(key)-\(ask)", date: askAt, content: content))
+            }
+        }
+        return Array(plan.sorted { $0.date < $1.date }.prefix(Self.maxScheduled))
+    }
+
+    /// Drop the pending and delivered asks of a window the user answered, then re-plan.
+    private func cancelScheduled(forKey key: String) {
+        let center = UNUserNotificationCenter.current()
+        let matches: (String) -> Bool = { $0 == "iqama-\(key)" || $0.hasPrefix("nag-confirm-\(key)-") }
+        center.getPendingNotificationRequests { pending in
+            center.removePendingNotificationRequests(withIdentifiers: pending.map(\.identifier).filter(matches))
+        }
+        center.getDeliveredNotifications { delivered in
+            center.removeDeliveredNotifications(withIdentifiers: delivered.map(\.request.identifier).filter(matches))
+        }
+        scheduleUpcoming(force: true)
+    }
+    #endif
 
     // MARK: - Window keys
 

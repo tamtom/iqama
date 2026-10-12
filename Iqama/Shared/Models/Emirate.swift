@@ -1,7 +1,7 @@
 import Foundation
 
 /// The seven UAE emirates we ship official Awqaf static data for. Each case maps to
-/// a per-emirate folder under `prayer_times_2026/<slug>/` and to the Awqaf API IDs the
+/// a per-emirate folder under `prayer_times/<year>/<slug>/` and to the Awqaf API IDs the
 /// data was fetched with. The centroid coordinates drive "nearest emirate" detection
 /// when CoreLocation reports the user is inside the UAE.
 enum Emirate: String, CaseIterable, Codable, Identifiable, Hashable {
