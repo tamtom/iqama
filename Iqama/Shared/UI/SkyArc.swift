@@ -47,6 +47,10 @@ struct SkyArcView: View {
     var bodySize: CGFloat = 36
     var animateIn = false
     var orbit = false
+    /// Space between the dial and the orbit.
+    var orbitGap: CGFloat = 30
+    /// False in widgets: a tap there opens the app, so the sun or moon is not a button.
+    var interactive = true
 
     @State private var travel: Double = 1
     @State private var showInfo = false
@@ -56,7 +60,7 @@ struct SkyArcView: View {
         GeometryReader { geo in
             ArcContent(size: geo.size, date: date, todayPrayerTimes: todayPrayerTimes,
                        activePrayer: activePrayer, bodySize: bodySize, travel: travel,
-                       orbit: orbit, showInfo: $showInfo)
+                       orbit: orbit, orbitGap: orbitGap, interactive: interactive, showInfo: $showInfo)
         }
         .onAppear {
             guard animateIn, !reduceMotion else { return }
@@ -74,6 +78,8 @@ private struct ArcContent: View, Animatable {
     var bodySize: CGFloat
     var travel: Double
     var orbit: Bool
+    var orbitGap: CGFloat
+    var interactive: Bool
     @Binding var showInfo: Bool
 
     var animatableData: Double {
@@ -88,7 +94,7 @@ private struct ArcContent: View, Animatable {
         let sunset = todayPrayerTimes?.prayerTime(for: .maghrib) ?? defaultSunset(date)
 
         // Orbit: the dial is the largest circle in the view; the arc runs outside its ring.
-        let orbitRadius = min(size.width, size.height) / 2 + 30
+        let orbitRadius = min(size.width, size.height) / 2 + orbitGap
         let inset: CGFloat = orbit ? size.width / 2 - orbitRadius : 30
         let arcLeft = inset
         let arcRight = size.width - inset
@@ -157,18 +163,23 @@ private struct ArcContent: View, Animatable {
 
             // 5. Sun / moon glyph at current position
             // Tap the sun or moon for what it shows, so the moon's phase is not read as a prayer state.
-            Button { showInfo = true } label: {
-                CelestialBodyGlyph(isDay: body.isDay, size: bodySize, moonPhase: todayPrayerTimes?.moonPhase ?? 0.5)
-                    .frame(width: bodySize, height: bodySize)
-                    .contentShape(.circle.inset(by: -6))
+            let glyph = CelestialBodyGlyph(isDay: body.isDay, size: bodySize,
+                                           moonPhase: todayPrayerTimes?.moonPhase ?? 0.5)
+                .frame(width: bodySize, height: bodySize)
+            if interactive {
+                Button { showInfo = true } label: {
+                    glyph.contentShape(.circle.inset(by: -6))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(body.isDay ? "Sun" : "Moon phase")
+                .popover(isPresented: $showInfo) {
+                    SkyBodyInfo(isDay: body.isDay, day: todayPrayerTimes, sunrise: sunrise, sunset: sunset)
+                        .presentationCompactAdaptation(.popover)
+                }
+                .position(bodyPos)
+            } else {
+                glyph.position(bodyPos)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(body.isDay ? "Sun" : "Moon phase")
-            .popover(isPresented: $showInfo) {
-                SkyBodyInfo(isDay: body.isDay, day: todayPrayerTimes, sunrise: sunrise, sunset: sunset)
-                    .presentationCompactAdaptation(.popover)
-            }
-            .position(bodyPos)
         }
     }
 
@@ -218,7 +229,7 @@ private struct ArcContent: View, Animatable {
     }
 }
 
-private struct CelestialBodyGlyph: View {
+struct CelestialBodyGlyph: View {
     let isDay: Bool
     var size: CGFloat
     var moonPhase: Double = 0.5

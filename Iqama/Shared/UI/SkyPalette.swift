@@ -1,12 +1,16 @@
 import SwiftUI
 
-/// Sky colors for one moment, anchored to the real sunrise and sunset of the day, so a winter
-/// morning and a summer morning both start blue at the actual sunrise.
+/// Sky colors for one moment, anchored to the real sunrise, Asr, and sunset of the day, so a
+/// winter morning and a summer morning both start blue at the actual sunrise, and the
+/// afternoon turns golden from the real Asr time.
 struct SkyColors {
     var zenith: Color       // top of the sky
     var horizon: Color      // bottom of the sky
     var glow: Color         // light around the sun or moon
     var light: Double       // 0 = night … 1 = full daylight
+
+    /// 0 = white noon light or night … 1 = the golden light of Asr, dawn, and sunset.
+    var warmth: Double = 0
 
     /// The far city: the horizon color seen through haze, darker when there's less light.
     var cityColor: Color {
@@ -30,7 +34,7 @@ enum SkyPalette {
         let light: Double
     }
 
-    private enum Anchor { case sunrise, noon, sunset }
+    private enum Anchor { case sunrise, noon, asr, sunset }
 
     private static let night = Key(minutes: 0, anchor: .sunrise,
                                    zenith: (0.03, 0.05, 0.13), horizon: (0.07, 0.09, 0.22),
@@ -44,26 +48,34 @@ enum SkyPalette {
         Key(minutes: 25, anchor: .sunrise, zenith: (0.30, 0.50, 0.80), horizon: (1.00, 0.79, 0.60), glow: (1.00, 0.88, 0.70), light: 0.7),
         Key(minutes: 90, anchor: .sunrise, zenith: (0.22, 0.50, 0.88), horizon: (0.62, 0.81, 0.97), glow: (1.00, 0.98, 0.92), light: 1),
         Key(minutes: 0, anchor: .noon, zenith: (0.13, 0.42, 0.86), horizon: (0.54, 0.77, 0.98), glow: (1.00, 1.00, 0.97), light: 1),
-        Key(minutes: -90, anchor: .sunset, zenith: (0.18, 0.45, 0.84), horizon: (0.68, 0.80, 0.94), glow: (1.00, 0.96, 0.86), light: 0.95),
-        Key(minutes: -30, anchor: .sunset, zenith: (0.26, 0.40, 0.72), horizon: (0.99, 0.72, 0.46), glow: (1.00, 0.80, 0.52), light: 0.8),
+        // Asr: the sun is low, the blue softens, and a warm haze rises from the horizon.
+        Key(minutes: -45, anchor: .asr, zenith: (0.15, 0.44, 0.85), horizon: (0.62, 0.80, 0.96), glow: (1.00, 0.98, 0.90), light: 1),
+        Key(minutes: 0, anchor: .asr, zenith: (0.19, 0.45, 0.82), horizon: (0.97, 0.84, 0.62), glow: (1.00, 0.88, 0.60), light: 0.95),
+        Key(minutes: 45, anchor: .asr, zenith: (0.24, 0.45, 0.78), horizon: (1.00, 0.78, 0.48), glow: (1.00, 0.82, 0.46), light: 0.9),
+        // Golden hour, then the orange of sunset.
+        Key(minutes: -45, anchor: .sunset, zenith: (0.30, 0.42, 0.70), horizon: (1.00, 0.70, 0.42), glow: (1.00, 0.74, 0.42), light: 0.78),
+        Key(minutes: -15, anchor: .sunset, zenith: (0.30, 0.30, 0.56), horizon: (1.00, 0.56, 0.30), glow: (1.00, 0.60, 0.32), light: 0.6),
         Key(minutes: 5, anchor: .sunset, zenith: (0.18, 0.18, 0.42), horizon: (0.98, 0.45, 0.22), glow: (1.00, 0.55, 0.30), light: 0.45),
         Key(minutes: 35, anchor: .sunset, zenith: (0.08, 0.08, 0.24), horizon: (0.50, 0.22, 0.34), glow: (0.95, 0.55, 0.55), light: 0.15),
         Key(minutes: 90, anchor: .sunset, zenith: night.zenith, horizon: night.horizon, glow: night.glow, light: 0),
     ]
 
-    /// Without data, sunrise 06:00 and sunset 18:15.
-    static func colors(at date: Date, sunrise: Date?, sunset: Date?) -> SkyColors {
+    /// Without data, sunrise 06:00 and sunset 18:15. Without an Asr time, Asr is 78% of the way
+    /// from sunrise to sunset (in the UAE it is between 74% and 81% through the year).
+    static func colors(at date: Date, sunrise: Date?, sunset: Date?, asr: Date? = nil) -> SkyColors {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: date)
         let rise = sunrise.map { sameDay($0, as: date) } ?? start.addingTimeInterval(6 * 3600)
         let set = sunset.map { sameDay($0, as: date) } ?? start.addingTimeInterval(18.25 * 3600)
         let noon = rise.addingTimeInterval(set.timeIntervalSince(rise) / 2)
+        let afternoon = asr.map { sameDay($0, as: date) } ?? rise.addingTimeInterval(set.timeIntervalSince(rise) * 0.78)
 
         func time(_ key: Key) -> Date {
             let base: Date
             switch key.anchor {
             case .sunrise: base = rise
             case .noon: base = noon
+            case .asr: base = afternoon
             case .sunset: base = set
             }
             return base.addingTimeInterval(key.minutes * 60)
@@ -96,7 +108,10 @@ enum SkyPalette {
             Color(.sRGB, red: x.0 + (y.0 - x.0) * f, green: x.1 + (y.1 - x.1) * f,
                   blue: x.2 + (y.2 - x.2) * f, opacity: 1)
         }
+        // A warm glow has much more red than blue.
+        let red = a.glow.0 + (b.glow.0 - a.glow.0) * f, blue = a.glow.2 + (b.glow.2 - a.glow.2) * f
         return SkyColors(zenith: c(a.zenith, b.zenith), horizon: c(a.horizon, b.horizon),
-                         glow: c(a.glow, b.glow), light: a.light + (b.light - a.light) * f)
+                         glow: c(a.glow, b.glow), light: a.light + (b.light - a.light) * f,
+                         warmth: min(1, max(0, (red - blue) / 0.6)))
     }
 }

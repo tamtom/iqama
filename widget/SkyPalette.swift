@@ -1,0 +1,1 @@
+../Iqama/Shared/UI/SkyPalette.swift

@@ -55,8 +55,9 @@ struct ContentView: View {
             let day = countdownManager.currentState?.todayPrayerTimes
             let sunrise = day?.sunriseTime ?? day?.prayerTime(for: .fajr).map { $0.addingTimeInterval(80 * 60) }
             let sunset = day?.prayerTime(for: .maghrib)
+            let asr = day?.prayerTime(for: .asr)
             let body = SkyGeometry.bodyNormalized(at: now, sunrise: sunrise, sunset: sunset)
-            let ground = SkyPalette.colors(at: now, sunrise: sunrise, sunset: sunset).groundColor
+            let ground = SkyPalette.colors(at: now, sunrise: sunrise, sunset: sunset, asr: asr).groundColor
 
             ZStack {
                 #if os(macOS)
@@ -65,7 +66,7 @@ struct ContentView: View {
                     .ignoresSafeArea()
 
                 // 2. The living sky tints the blurred wallpaper without fully blocking it.
-                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset)
+                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset, asr: asr)
                     .opacity(0.7)
                     .ignoresSafeArea()
 
@@ -74,7 +75,7 @@ struct ContentView: View {
                     .frame(width: 0, height: 0)
                 #else
                 Color.black.ignoresSafeArea()
-                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset)
+                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset, asr: asr)
                     .ignoresSafeArea()
                 #endif
 
@@ -114,7 +115,8 @@ struct ContentView: View {
                             }
                             .zIndex(1)
 
-                        HorizonView(date: now, sunrise: sunrise, sunset: sunset)
+                        HorizonView(date: now, sunrise: sunrise, sunset: sunset, asr: asr,
+                                    lightX: body.isDay ? 0.5 - 0.5 * cos(body.x * .pi) : 0.5)
                             .padding(.top, -36)
 
                         PrayerTimeline(day: day,

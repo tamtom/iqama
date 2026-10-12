@@ -17,13 +17,19 @@ struct CountdownDial: View {
 
     private var accent: Color { isIqama ? Theme.accentGold : Theme.accentEmerald }
     private var finalMinute: Bool { remaining <= 60 }
+    private var shownProgress: Double { (progress * 720).rounded() / 720 }
+    /// The countdown without its seconds ("1:32:46" → "1:32"), except in the final minute.
+    private var rollKey: String { finalMinute ? countdown : String(countdown.dropLast(3)) }
 
     var body: some View {
         ZStack {
             // A new phase gets a new ring, so the arc never unwinds from full back to empty.
-            DialRing(progress: appeared ? progress : 0, accent: accent)
+            // Steps of half a degree: the ring redraws only when the change is visible. Each
+            // second's change on a long interval is far smaller, and an animation for each
+            // one kept the ring and its shadow redrawing at the full frame rate.
+            DialRing(progress: appeared ? shownProgress : 0, accent: accent)
                 .animation(reduceMotion ? nil : .spring(duration: 1.4, bounce: 0.15), value: appeared)
-                .animation(live ? .linear(duration: 1) : nil, value: progress)
+                .animation(live ? .linear(duration: 1) : nil, value: shownProgress)
                 .id("\(prayer.rawValue)|\(isIqama)")
                 .transition(.opacity)
 
@@ -44,7 +50,10 @@ struct CountdownDial: View {
                     .shadow(color: accent.opacity(finalMinute ? 0.9 : 0.6), radius: finalMinute ? 24 : 18)
                     .contentTransition(.numericText(countsDown: true))
                     .animation(.easeInOut(duration: 0.6), value: finalMinute)
-                    .animation(live ? .snappy(duration: 0.3) : nil, value: countdown)
+                    // The digits roll when the minute changes, and each second only in the final
+                    // minute. The roll blurs the large digits, so a roll every second for the
+                    // whole countdown doubled the app's CPU use.
+                    .animation(live ? .snappy(duration: 0.3) : nil, value: rollKey)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
 
