@@ -35,9 +35,9 @@ struct RamadanStatus: Equatable {
 
     static let iftarDua = "ذهب الظمأ وابتلّت العروق وثبت الأجر إن شاء الله"
 
-    /// The status for `now`, or nil when Ramadan mode is off for this day.
+    /// The status for `now`, or nil when it is not Ramadan and fasting mode is off.
     static func at(_ now: Date, day: DailyPrayerTimes?, mode: AppSettings.RamadanMode) -> RamadanStatus? {
-        guard let day, mode != .off else { return nil }
+        guard let day else { return nil }
         let isRamadan = day.hijryMonth == 9
         guard isRamadan || mode == .always else { return nil }
         guard let imsak = day.prayerTime(for: .fajr),
@@ -52,7 +52,7 @@ struct RamadanStatus: Equatable {
             phase = .iftar
         } else {
             // On the last nights of the month no fast may follow, so the app does not
-            // promise a Suhoor that is not there. The preview mode always shows it.
+            // promise a Suhoor that is not there. Fasting mode always shows it.
             if mode == .auto && day.hijryDay >= 29 { return nil }
             phase = .night
         }

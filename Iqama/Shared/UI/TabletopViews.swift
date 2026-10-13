@@ -1,12 +1,14 @@
 #if os(iOS)
 import SwiftUI
 
-/// The countdown in the sky half of the tabletop pose. It is large and has no dial, because
-/// the sun itself crosses the sky behind it.
+/// The large countdown without a dial, for iPhone Duo: in the sky half of the tabletop pose,
+/// and under the skyline of the open layout. The sun itself crosses the sky above it.
 struct TabletopCountdown: View {
     var snapshot: CountdownSnapshot
     var ramadan: RamadanStatus?
     var live: Bool
+    /// The size of the numbers. The other text scales with it.
+    var countdownSize: CGFloat = 88
 
     private static let coral = Color(red: 1.0, green: 0.62, blue: 0.42)
 
@@ -23,7 +25,7 @@ struct TabletopCountdown: View {
             .foregroundStyle(.white.opacity(0.94))
 
             Text(live ? snapshot.formattedTimeRemaining : snapshot.shortFormattedTime)
-                .font(.system(size: 88, weight: .bold, design: .rounded))
+                .font(.system(size: countdownSize, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
@@ -31,9 +33,9 @@ struct TabletopCountdown: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(text.title)
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
+                    .font(.system(size: countdownSize * 0.32, weight: .semibold, design: .rounded))
                 Text(text.arabic)
-                    .font(.system(size: 26))
+                    .font(.system(size: countdownSize * 0.3))
                     .foregroundStyle(.white.opacity(0.88))
             }
 

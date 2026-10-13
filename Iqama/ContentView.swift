@@ -99,8 +99,10 @@ struct ContentView: View {
                     let fold = Self.fold(in: geo)
                     if let horizon = tabletopHorizon(fold, geo) {
                         tabletopLayout(sky, horizon: horizon, safeTop: geo.safeAreaInsets.top)
+                    } else if let fold, fold.height > fold.width, geo.size.width > geo.size.height {
+                        openLayout(sky, fold: fold, size: geo.size)
                     } else if horizontalSizeClass == .regular && geo.size.width > geo.size.height * 1.15 {
-                        wideLayout(sky, fold: fold.flatMap { $0.height > $0.width ? $0 : nil })
+                        wideLayout(sky, fold: nil)
                     } else {
                         stackedLayout(sky)
                     }
@@ -242,8 +244,11 @@ struct ContentView: View {
                         .zIndex(1)
                 }
 
+                // The skyline and the ground go under the side safe areas, for example the
+                // system item on the outer display of iPhone Duo. The content stays inside them.
                 HorizonView(date: sky.now, sunrise: sky.sunrise, sunset: sky.sunset, asr: sky.asr,
                             lightX: sky.lightX)
+                    .ignoresSafeArea(edges: .horizontal)
                     .padding(.top, -36)
 
                 PrayerTimeline(day: sky.day,
@@ -260,6 +265,7 @@ struct ContentView: View {
                     // so a bounce at the bottom never shows sky below the land.
                     .background(alignment: .top) {
                         sky.ground.padding(.bottom, -1200)
+                            .ignoresSafeArea(edges: .horizontal)
                     }
             }
             #if os(macOS)
@@ -407,10 +413,146 @@ struct ContentView: View {
         }
     }
 
+    /// The inner display of iPhone Duo, open. One sky goes across the whole width, with the
+    /// day arc from the sunrise on the right (east) to Maghrib on the left (west). Below the
+    /// skyline the fold divides the screen: the countdown on the left, the prayers on the right.
+    /// The controls are in the rail at the side, below the camera.
+    private func openLayout(_ sky: SkyState, fold: CGRect, size: CGSize) -> some View {
+        let line = (size.height * 0.5).rounded()
+        let half = fold.midX
+        return ZStack(alignment: .topLeading) {
+            // The ground below the sky, and a skyline in each half that stands on the line.
+            VStack(spacing: 0) {
+                Color.clear.frame(height: line)
+                sky.ground
+            }
+            .ignoresSafeArea()
+
+            HStack(alignment: .bottom, spacing: 0) {
+                HorizonView(date: sky.now, sunrise: sky.sunrise, sunset: sky.sunset, asr: sky.asr,
+                            lightX: sky.lightX)
+                    .frame(width: half)
+                HorizonView(date: sky.now, sunrise: sky.sunrise, sunset: sky.sunset, asr: sky.asr,
+                            lightX: sky.lightX)
+                    .scaleEffect(x: -1)
+                    .frame(maxWidth: .infinity)
+            }
+            .frame(height: line + 4, alignment: .bottom)
+            .ignoresSafeArea(edges: .horizontal)
+
+            SkyArcView(date: sky.now,
+                       todayPrayerTimes: sky.day,
+                       activePrayer: effectivePrayer,
+                       animateIn: true)
+                .frame(width: size.width, height: line - 30)
+
+            header(sky.ramadan)
+                .padding(.horizontal, 28)
+                .padding(.top, 14)
+                .frame(width: size.width - 40, alignment: .leading)
+
+            HStack(alignment: .top, spacing: 0) {
+                VStack(spacing: 12) {
+                    if let snapshot = countdownManager.currentState {
+                        TabletopCountdown(snapshot: snapshot, ramadan: sky.ramadan, live: windowActive,
+                                          countdownSize: 64)
+                        iqamaPill(snapshot)
+                    }
+                    if let ramadan = sky.ramadan {
+                        RamadanCard(status: ramadan, clockOffset: previewClock.offset)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .frame(width: max(fold.minX, 0))
+
+                Color.clear.frame(width: fold.width)
+
+                ScrollView {
+                    PrayerTimeline(day: sky.day,
+                                   settings: countdownManager.currentState?.azanSettings,
+                                   activePrayer: effectivePrayer,
+                                   isIqamaPhase: effectiveIsIqama,
+                                   now: sky.now)
+                }
+                .scrollIndicators(.hidden)
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .bottom) { dockPanels.padding(.bottom, 4) }
+            }
+            .padding(.top, line + 12)
+            .frame(width: size.width, height: size.height, alignment: .top)
+
+            rail
+                .frame(width: 84, height: size.height + 34)
+                .offset(x: size.width)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+    }
+
+    /// The iqama time under the countdown to the azan.
+    @ViewBuilder
+    private func iqamaPill(_ snapshot: CountdownSnapshot) -> some View {
+        let prayer = snapshot.phase.prayer
+        let day = snapshot.todayPrayerTimes
+        if !snapshot.phase.isIqamaPhase, snapshot.sunrise == nil,
+           let azan = day?.prayerTime(for: prayer),
+           let minutes = snapshot.azanSettings?.iqamaMinutes(for: prayer, isFriday: day?.isFriday ?? false) {
+            Text("Iqama \(azan.addingTimeInterval(TimeInterval(minutes * 60)), format: .dateTime.hour().minute())")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(.white.opacity(0.07), in: .capsule)
+        }
+    }
+
+    /// The controls of the open layout in one column, in the side safe area below the camera.
+    private var rail: some View {
+        GlassEffectContainer(spacing: 8) {
+            VStack(spacing: 14) {
+                VStack(spacing: 6) {
+                    railButton("location.fill", label: "Location: \(locationText)", action: openLocationSettings)
+                    Text(locationText)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(width: 76)
+                }
+                .padding(.top, 130)
+
+                Spacer(minLength: 0)
+
+                if previewClock.isAvailable {
+                    railButton("clock.arrow.trianglehead.counterclockwise.rotate.90", label: "Time preview") {
+                        showTimePreview.toggle()
+                    }
+                    .tint(previewClock.isActive ? Theme.accentGold : nil)
+                }
+                railButton("checkmark.seal", label: "Prayer Check-in") { showCheckInSetup = true }
+                railButton("gearshape", label: "Settings", action: openSettings)
+            }
+            .padding(.bottom, 34)
+        }
+        .controlSize(.large)
+    }
+
+    private func railButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 16, weight: .medium))
+                .frame(width: 22, height: 22)
+        }
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
+        .accessibilityLabel(label)
+    }
+
     /// The fold of iPhone Duo in the coordinates of `geo`, or nil on a screen without a fold.
+    /// The system marks the fold inactive when the device is flat, but the crease is still
+    /// there, so the layouts use it in every position.
     private static func fold(in geo: GeometryProxy) -> CGRect? {
         if #available(iOS 27.1, *) {
-            return geo.reservedRegions(kind: .division).first(where: \.isActive)?.frame
+            return geo.reservedRegions(kind: .division, options: .includeInactive).first?.frame
         }
         return nil
     }
@@ -558,24 +700,7 @@ struct ContentView: View {
     private var dock: some View {
         GlassEffectContainer(spacing: 8) {
             VStack(spacing: 10) {
-                if showTimePreview {
-                    TimePreviewPanel { showTimePreview = false }
-                        .glassEffect(.regular, in: .rect(cornerRadius: 24))
-                        .glassEffectID("preview", in: dockNamespace)
-                } else if let pending = checkIn.pendingCheckIn {
-                    checkInPrompt(pending)
-                }
-
-                if adhan.playing != nil {
-                    Button { adhan.stop() } label: {
-                        Label("Stop Adhan", systemImage: "speaker.slash.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .padding(.horizontal, 6)
-                    }
-                    .buttonStyle(.glass)
-                    .tint(Theme.accentGold)
-                    .glassEffectID("adhan", in: dockNamespace)
-                }
+                panels
 
                 HStack(spacing: 10) {
                     Button(action: openLocationSettings) {
@@ -630,6 +755,42 @@ struct ContentView: View {
         .controlSize(.large)
         .padding(.horizontal, 20)
         .padding(.bottom, 6)
+        .animation(.spring(duration: 0.5, bounce: 0.25), value: checkIn.pendingCheckIn)
+        .animation(.spring(duration: 0.5, bounce: 0.2), value: showTimePreview)
+        .animation(.spring(duration: 0.5, bounce: 0.2), value: adhan.playing)
+    }
+
+    /// The time preview, the check-in prompt, and the button that stops the Adhan. They float
+    /// above the dock, or above the prayers in the open layout of iPhone Duo.
+    @ViewBuilder
+    private var panels: some View {
+        if showTimePreview {
+            TimePreviewPanel { showTimePreview = false }
+                .glassEffect(.regular, in: .rect(cornerRadius: 24))
+                .glassEffectID("preview", in: dockNamespace)
+        } else if let pending = checkIn.pendingCheckIn {
+            checkInPrompt(pending)
+        }
+
+        if adhan.playing != nil {
+            Button { adhan.stop() } label: {
+                Label("Stop Adhan", systemImage: "speaker.slash.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 6)
+            }
+            .buttonStyle(.glass)
+            .tint(Theme.accentGold)
+            .glassEffectID("adhan", in: dockNamespace)
+        }
+    }
+
+    /// The panels alone, in their own glass container.
+    private var dockPanels: some View {
+        GlassEffectContainer(spacing: 8) {
+            VStack(spacing: 10) { panels }
+        }
+        .controlSize(.large)
+        .padding(.horizontal, 12)
         .animation(.spring(duration: 0.5, bounce: 0.25), value: checkIn.pendingCheckIn)
         .animation(.spring(duration: 0.5, bounce: 0.2), value: showTimePreview)
         .animation(.spring(duration: 0.5, bounce: 0.2), value: adhan.playing)

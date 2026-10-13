@@ -98,6 +98,10 @@ private struct SkyLight: View {
         return GeometryReader { geo in
             let unit = UnitPoint(x: source.x / max(geo.size.width, 1), y: source.y / max(geo.size.height, 1))
             ZStack {
+                // The mesh ends at 72 %. Below it the horizon color continues, so a short
+                // screen (the outer display of iPhone Duo) has sky behind a low skyline.
+                sky.horizon
+
                 MeshGradient(width: 3, height: 3,
                              points: meshPoints(t: t),
                              colors: meshColors(sky, sunX: bodyIsDay ? unit.x : 0.5))

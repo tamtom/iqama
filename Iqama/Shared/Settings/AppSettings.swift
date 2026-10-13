@@ -171,9 +171,10 @@ enum AppSettings {
 
     // MARK: - Ramadan
 
-    /// `auto` turns Ramadan mode on in the month of Ramadan. `always` shows it on every day,
-    /// as a preview. `off` never shows it.
-    enum RamadanMode: String, CaseIterable { case auto, always, off }
+    /// `auto` turns Ramadan mode on in the month of Ramadan only. `always` is fasting mode: it
+    /// shows the fasting times on any day, for a voluntary fast. An old stored value `off`
+    /// reads as `auto`.
+    enum RamadanMode: String, CaseIterable { case auto, always }
 
     static var ramadanMode: RamadanMode {
         RamadanMode(rawValue: shared.string(forKey: Keys.ramadanMode) ?? Defaults.ramadanMode) ?? .auto

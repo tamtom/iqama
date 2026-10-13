@@ -242,15 +242,13 @@ struct SettingsView: View {
 
     private var ramadanSection: some View {
         Section {
-            Picker("Ramadan mode", selection: $ramadanMode) {
-                Text("Automatic").tag(AppSettings.RamadanMode.auto.rawValue)
-                Text("Always (preview)").tag(AppSettings.RamadanMode.always.rawValue)
-                Text("Off").tag(AppSettings.RamadanMode.off.rawValue)
-            }
+            Toggle("Fasting mode", isOn: Binding(
+                get: { ramadanMode == AppSettings.RamadanMode.always.rawValue },
+                set: { ramadanMode = ($0 ? AppSettings.RamadanMode.always : .auto).rawValue }))
         } header: {
             Text("Ramadan")
         } footer: {
-            Text("In Ramadan the app shows the Suhoor time until Imsak, the fasting bar and the Iftar countdown in the day, and the Iftar dua at Maghrib.")
+            Text("In Ramadan the app shows the fasting times by itself: the Suhoor time until Imsak, the fasting bar and the Iftar countdown, and the Iftar dua at Maghrib. On other days, turn on fasting mode for a voluntary fast.")
         }
     }
 
