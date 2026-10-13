@@ -105,7 +105,7 @@ private struct SkyLight: View {
                 // The sun or moon lights up the sky around it; low warm light spreads further.
                 RadialGradient(
                     colors: bodyIsDay
-                        ? [sky.glow.opacity(0.3 + 0.35 * sky.warmth), sky.glow.opacity(0.06 + 0.16 * sky.warmth), .clear]
+                        ? [sky.glow.opacity(0.09 + 0.105 * sky.warmth), sky.glow.opacity(0.018 + 0.048 * sky.warmth), .clear]
                         : [sky.glow.opacity(0.16), .clear],
                     center: unit,
                     startRadius: 2,

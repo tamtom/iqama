@@ -30,6 +30,10 @@ struct SettingsView: View {
     @AppStorage(AppSettings.Keys.selectedCity, store: AppSettings.shared)
     private var city = ""
 
+    // Ramadan mode
+    @AppStorage(AppSettings.Keys.ramadanMode, store: AppSettings.shared)
+    private var ramadanMode = AppSettings.Defaults.ramadanMode
+
     // Calculation method
     @AppStorage(AppSettings.Keys.calcMethod, store: AppSettings.shared)
     private var calcMethod = AppSettings.Defaults.calcMethod
@@ -77,6 +81,7 @@ struct SettingsView: View {
             if !isUAE { methodSection }
             iqamaSection
             adhanSection
+            ramadanSection
             notificationsSection
             nagSection
             Section {
@@ -232,6 +237,20 @@ struct SettingsView: View {
             #else
             Text("The full Adhan plays at the azan time of each prayer that is on, while Iqama runs in the menu bar.")
             #endif
+        }
+    }
+
+    private var ramadanSection: some View {
+        Section {
+            Picker("Ramadan mode", selection: $ramadanMode) {
+                Text("Automatic").tag(AppSettings.RamadanMode.auto.rawValue)
+                Text("Always (preview)").tag(AppSettings.RamadanMode.always.rawValue)
+                Text("Off").tag(AppSettings.RamadanMode.off.rawValue)
+            }
+        } header: {
+            Text("Ramadan")
+        } footer: {
+            Text("In Ramadan the app shows the Suhoor time until Imsak, the fasting bar and the Iftar countdown in the day, and the Iftar dua at Maghrib.")
         }
     }
 

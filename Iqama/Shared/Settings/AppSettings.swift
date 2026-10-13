@@ -30,6 +30,12 @@ enum AppSettings {
         static let adhanMaghrib = "adhanMaghrib"
         static let adhanIsha = "adhanIsha"
 
+        // Ramadan mode
+        static let ramadanMode = "ramadanMode"              // RamadanMode.rawValue
+
+        // Test tools (TestFlight, Debug, or a Mac with `showTestTools` set)
+        static let showTestTools = "showTestTools"          // macOS: shows the test tools in a Release build
+
         // Location
         static let locationConfirmed = "locationConfirmed"  // user finished first-run setup
         static let locationMode = "locationMode"            // "auto" | "manual"
@@ -68,6 +74,8 @@ enum AppSettings {
 
         static let adhanSound = "makkah"   // AdhanSound.makkah
         static let adhanPrayer = true   // the Adhan plays for every prayer until the user turns one off
+
+        static let ramadanMode = RamadanMode.auto.rawValue
 
         static let locationMode = "auto"
         static let selectedEmirate = Emirate.dubai.slug
@@ -159,6 +167,16 @@ enum AppSettings {
     /// Whether the Adhan plays (and the azan alert shows) at this prayer's azan time.
     static func adhanEnabled(for prayer: Prayer) -> Bool {
         notif.object(forKey: adhanKey(for: prayer)) as? Bool ?? Defaults.adhanPrayer
+    }
+
+    // MARK: - Ramadan
+
+    /// `auto` turns Ramadan mode on in the month of Ramadan. `always` shows it on every day,
+    /// as a preview. `off` never shows it.
+    enum RamadanMode: String, CaseIterable { case auto, always, off }
+
+    static var ramadanMode: RamadanMode {
+        RamadanMode(rawValue: shared.string(forKey: Keys.ramadanMode) ?? Defaults.ramadanMode) ?? .auto
     }
 
     // MARK: - Location

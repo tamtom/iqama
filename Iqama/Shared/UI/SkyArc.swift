@@ -338,24 +338,25 @@ struct CelestialBodyGlyph: View {
 
     var body: some View {
         if isDay {
-            // Sun: a white-hot core in a wide soft glow, with a faint 22° halo ring.
+            // Sun: a white-hot core in a soft glow, with a faint 22° halo ring. The glow is
+            // 30% of the first design, which had too much bloom.
             let d = size
             Circle()
                 .fill(RadialGradient(colors: [.white, Color(red: 1, green: 0.98, blue: 0.88),
                                               Color(red: 1, green: 0.90, blue: 0.62)],
                                      center: .center, startRadius: 0, endRadius: d * 0.5))
                 .frame(width: d, height: d)
-                .shadow(color: .white.opacity(0.9), radius: d * 0.35)
-                .shadow(color: Color(red: 1, green: 0.9, blue: 0.6).opacity(0.6), radius: d * 0.9)
+                .shadow(color: .white.opacity(0.27), radius: d * 0.105)
+                .shadow(color: Color(red: 1, green: 0.9, blue: 0.6).opacity(0.18), radius: d * 0.27)
                 .background {
                     Circle()
-                        .fill(RadialGradient(colors: [.white.opacity(0.55), .white.opacity(0.12), .clear],
+                        .fill(RadialGradient(colors: [.white.opacity(0.165), .white.opacity(0.036), .clear],
                                              center: .center, startRadius: d * 0.3, endRadius: d * 1.9))
                         .frame(width: d * 3.8, height: d * 3.8)
                     Circle()
                         .strokeBorder(
                             AngularGradient(colors: ([.red, .orange, .yellow, .green, .cyan, .blue, .purple, .red] as [Color])
-                                .map { $0.opacity(0.22) }, center: .center),
+                                .map { $0.opacity(0.066) }, center: .center),
                             lineWidth: d * 0.12)
                         .blur(radius: d * 0.08)
                         .frame(width: d * 3.0, height: d * 3.0)

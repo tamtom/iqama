@@ -30,6 +30,11 @@ struct ContentView: View {
 
     @AppStorage(AppSettings.Keys.locationConfirmed, store: AppSettings.shared)
     private var locationConfirmed = false
+    @AppStorage(AppSettings.Keys.ramadanMode, store: AppSettings.shared)
+    private var ramadanMode = AppSettings.Defaults.ramadanMode
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #endif
     @State private var showLocationSetup = false
 
     // Prayer check-in
@@ -48,6 +53,7 @@ struct ContentView: View {
     @State private var lastPhaseKey = ""
     @State private var scrollPosition = ScrollPosition()
     @State private var showTimePreview = false
+    @State private var hingePartiallyOpen = false
     private let previewClock = PreviewClock.shared
 
     var body: some View {
@@ -58,7 +64,11 @@ struct ContentView: View {
             let sunset = day?.prayerTime(for: .maghrib)
             let asr = day?.prayerTime(for: .asr)
             let body = SkyGeometry.bodyNormalized(at: now, day: day)
-            let ground = SkyPalette.colors(at: now, sunrise: sunrise, sunset: sunset, asr: asr).groundColor
+            let sky = SkyState(now: now, day: day, sunrise: sunrise, sunset: sunset, asr: asr,
+                               lightX: body.isDay ? 0.5 - 0.5 * cos(body.x * .pi) : 0.5,
+                               ground: SkyPalette.colors(at: now, sunrise: sunrise, sunset: sunset, asr: asr).groundColor,
+                               ramadan: RamadanStatus.at(now, day: day,
+                                                         mode: AppSettings.RamadanMode(rawValue: ramadanMode) ?? .auto))
 
             ZStack {
                 #if os(macOS)
@@ -74,85 +84,35 @@ struct ContentView: View {
                 // 3. AppKit interop: make the host NSWindow transparent.
                 WindowTransparencyConfigurator()
                     .frame(width: 0, height: 0)
+
+                stackedLayout(sky)
                 #else
                 Color.black.ignoresSafeArea()
                 SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset, asr: asr)
                     .ignoresSafeArea()
-                #endif
 
-                ScrollView {
-                    VStack(spacing: 0) {
-                        #if os(macOS)
-                        if let update = updateChecker.availableUpdate {
-                            UpdateBanner(update: update)
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 12)
-                        }
-                        #endif
-
-                        header
-                            .padding(.horizontal, 28)
-                            .scrollTransition(.interactive, axis: .vertical) { content, phase in
-                                content.opacity(phase.isIdentity ? 1 : 0.3)
-                            }
-
-                        // The sun or moon orbits the countdown dial, from its middle on the
-                        // left, over the top, to its middle on the right.
-                        hero
-                            .padding(.horizontal, 64)
-                            .background {
-                                SkyArcView(date: now,
-                                           todayPrayerTimes: day,
-                                           activePrayer: effectivePrayer,
-                                           animateIn: true,
-                                           orbit: true)
-                                    .padding(.horizontal, 64)
-                            }
-                            .padding(.top, 64)
-                            .scrollTransition(.interactive, axis: .vertical) { content, phase in
-                                content
-                                    .scaleEffect(phase.value < 0 ? 0.88 : 1)
-                                    .opacity(phase.value < 0 ? 0.35 : 1)
-                            }
-                            .zIndex(1)
-
-                        HorizonView(date: now, sunrise: sunrise, sunset: sunset, asr: asr,
-                                    lightX: body.isDay ? 0.5 - 0.5 * cos(body.x * .pi) : 0.5)
-                            .padding(.top, -36)
-
-                        PrayerTimeline(day: day,
-                                       settings: countdownManager.currentState?.azanSettings,
-                                       activePrayer: effectivePrayer,
-                                       isIqamaPhase: effectiveIsIqama,
-                                       now: now)
-                            .padding(.horizontal, 14)
-                            .padding(.top, 4)
-                            .padding(.bottom, 24)
-                            .frame(maxWidth: 560)
-                            .frame(maxWidth: .infinity)
-                            // The ground under the skyline continues past the end of the content,
-                            // so a bounce at the bottom never shows sky below the land.
-                            .background(alignment: .top) {
-                                ground.padding(.bottom, -1200)
-                            }
+                // A wide screen (the inner display of iPhone Duo, an iPad in landscape) shows
+                // two columns. A tall screen shows one column that scrolls.
+                // iPhone Duo half open with the fold across the screen is the tabletop pose: the
+                // fold becomes the horizon of the sea.
+                GeometryReader { geo in
+                    let fold = Self.fold(in: geo)
+                    if let horizon = tabletopHorizon(fold, geo) {
+                        tabletopLayout(sky, horizon: horizon, safeTop: geo.safeAreaInsets.top)
+                    } else if horizontalSizeClass == .regular && geo.size.width > geo.size.height * 1.15 {
+                        wideLayout(sky, fold: fold.flatMap { $0.height > $0.width ? $0 : nil })
+                    } else {
+                        stackedLayout(sky)
                     }
-                    #if os(macOS)
-                    .padding(.top, 52)           // clear the macOS 26 window controls
-                    #else
-                    .padding(.top, 8)            // safe area handles the notch on iOS
-                    #endif
                 }
-                .scrollIndicators(.hidden)
-                .safeAreaBar(edge: .bottom) { dock }
-                .scrollPosition($scrollPosition)
-                .onChange(of: effectivePrayer, initial: true) { _, prayer in
-                    scrollToActive(prayer)
+                .modifier(HingeObserver(partiallyOpen: $hingePartiallyOpen))
+
+                #if DEBUG
+                if UserDefaults.standard.bool(forKey: "seaPreview") {
+                    seaPreview(now, day: day)
                 }
-                .onChange(of: showTimePreview) { _, shown in
-                    // The preview panel is tall: keep the dial in view above it.
-                    if shown { withAnimation(.spring(duration: 0.6)) { scrollPosition.scrollTo(edge: .top) } }
-                    else { scrollToActive(effectivePrayer) }
-                }
+                #endif
+                #endif
             }
         }
         #if os(macOS)
@@ -202,6 +162,272 @@ struct ContentView: View {
         #endif
     }
 
+    #if DEBUG && os(iOS)
+    /// A test of the tabletop sea: `-seaPreview YES` shows it full screen with the horizon at the
+    /// middle. `-seaClock HH:mm` sets the time of the day.
+    private func seaPreview(_ now: Date, day: DailyPrayerTimes?) -> some View {
+        var date = now
+        if let clock = UserDefaults.standard.string(forKey: "seaClock") {
+            let parts = clock.split(separator: ":").compactMap { Int($0) }
+            if parts.count == 2 {
+                date = Calendar.current.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: now) ?? now
+            }
+        }
+        let latitude = AppSettings.selectedLatitude ?? AppSettings.selectedEmirate.latitude
+        return GeometryReader { geo in
+            SeaHorizonView(date: date, day: day, latitude: latitude, foldY: geo.size.height / 2)
+        }
+        .ignoresSafeArea()
+    }
+    #endif
+
+    /// The values that one update of the sky gives to the layouts.
+    private struct SkyState {
+        let now: Date
+        let day: DailyPrayerTimes?
+        let sunrise: Date?
+        let sunset: Date?
+        let asr: Date?
+        /// 0 = the sun is at the left, 1 = at the right.
+        let lightX: Double
+        let ground: Color
+        let ramadan: RamadanStatus?
+    }
+
+    // MARK: - Layouts
+
+    /// One column that scrolls: the iPhone, the outer display of iPhone Duo, and the Mac.
+    private func stackedLayout(_ sky: SkyState) -> some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                #if os(macOS)
+                if let update = updateChecker.availableUpdate {
+                    UpdateBanner(update: update)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                }
+                #endif
+
+                header(sky.ramadan)
+                    .padding(.horizontal, 28)
+                    .scrollTransition(.interactive, axis: .vertical) { content, phase in
+                        content.opacity(phase.isIdentity ? 1 : 0.3)
+                    }
+
+                // The sun or moon orbits the countdown dial, from its middle on the
+                // left, over the top, to its middle on the right.
+                hero(sky.ramadan)
+                    .padding(.horizontal, 64)
+                    .background {
+                        SkyArcView(date: sky.now,
+                                   todayPrayerTimes: sky.day,
+                                   activePrayer: effectivePrayer,
+                                   animateIn: true,
+                                   orbit: true)
+                            .padding(.horizontal, 64)
+                    }
+                    .padding(.top, 64)
+                    .scrollTransition(.interactive, axis: .vertical) { content, phase in
+                        content
+                            .scaleEffect(phase.value < 0 ? 0.88 : 1)
+                            .opacity(phase.value < 0 ? 0.35 : 1)
+                    }
+                    .zIndex(1)
+
+                if let ramadan = sky.ramadan {
+                    RamadanCard(status: ramadan, clockOffset: previewClock.offset)
+                        .padding(.horizontal, 24)
+                        // The skyline below moves up by 36 points. This space keeps it off the card.
+                        .padding(.bottom, 40)
+                        .zIndex(1)
+                }
+
+                HorizonView(date: sky.now, sunrise: sky.sunrise, sunset: sky.sunset, asr: sky.asr,
+                            lightX: sky.lightX)
+                    .padding(.top, -36)
+
+                PrayerTimeline(day: sky.day,
+                               settings: countdownManager.currentState?.azanSettings,
+                               activePrayer: effectivePrayer,
+                               isIqamaPhase: effectiveIsIqama,
+                               now: sky.now)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 4)
+                    .padding(.bottom, 24)
+                    .frame(maxWidth: 560)
+                    .frame(maxWidth: .infinity)
+                    // The ground under the skyline continues past the end of the content,
+                    // so a bounce at the bottom never shows sky below the land.
+                    .background(alignment: .top) {
+                        sky.ground.padding(.bottom, -1200)
+                    }
+            }
+            #if os(macOS)
+            .padding(.top, 52)           // clear the macOS 26 window controls
+            #else
+            .padding(.top, 8)            // safe area handles the notch on iOS
+            #endif
+        }
+        .scrollIndicators(.hidden)
+        .safeAreaBar(edge: .bottom) { dock }
+        .scrollPosition($scrollPosition)
+        .onChange(of: effectivePrayer, initial: true) { _, prayer in
+            scrollToActive(prayer)
+        }
+        .onChange(of: showTimePreview) { _, shown in
+            // The preview panel is tall: keep the dial in view above it.
+            if shown { withAnimation(.spring(duration: 0.6)) { scrollPosition.scrollTo(edge: .top) } }
+            else { scrollToActive(effectivePrayer) }
+        }
+    }
+
+    #if os(iOS)
+    /// Two columns, one in each half of a wide screen. On the inner display of iPhone Duo the
+    /// fold is between the columns, so no text and no control is on the fold.
+    private func wideLayout(_ sky: SkyState, fold: CGRect?) -> some View {
+        // With a real fold, the left column ends at the fold and the right column starts after
+        // it. Without one (an iPad), the two columns share the width.
+        let gap = fold.map { max($0.width, 24) } ?? 48
+        let left = fold.map { max($0.midX - gap / 2, 0) }
+        return HStack(alignment: .top, spacing: gap) {
+            VStack(spacing: 0) {
+                header(sky.ramadan)
+                    .padding(.horizontal, 28)
+
+                // A fixed size: the column is short, and a smaller dial cuts the countdown.
+                hero(sky.ramadan)
+                    .frame(width: 260, height: 260)
+                    .padding(.horizontal, 48)
+                    .background {
+                        SkyArcView(date: sky.now,
+                                   todayPrayerTimes: sky.day,
+                                   activePrayer: effectivePrayer,
+                                   animateIn: true,
+                                   orbit: true)
+                            .padding(.horizontal, 48)
+                    }
+                    .padding(.top, 24)
+                    .layoutPriority(1)
+                    .zIndex(1)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 8)
+            .frame(minWidth: left, maxWidth: left ?? .infinity, maxHeight: .infinity)
+
+            ScrollView {
+                if let ramadan = sky.ramadan {
+                    RamadanCard(status: ramadan, clockOffset: previewClock.offset)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 16)
+                }
+                PrayerTimeline(day: sky.day,
+                               settings: countdownManager.currentState?.azanSettings,
+                               activePrayer: effectivePrayer,
+                               isIqamaPhase: effectiveIsIqama,
+                               now: sky.now)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: 520)
+                    .frame(maxWidth: .infinity)
+            }
+            .scrollIndicators(.hidden)
+            .safeAreaBar(edge: .bottom) { dock }
+            .background(sky.ground.opacity(0.88), in: .rect(cornerRadius: 32))
+            .padding(.vertical, 8)
+            .padding(.trailing, 12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background {
+            // SkyScene draws the sky down to 72 % of the screen. The skyline stands on that
+            // line under the left column, and the ground fills the screen below it.
+            GeometryReader { geo in
+                let line = geo.size.height * 0.72
+                ZStack(alignment: .topLeading) {
+                    VStack(spacing: 0) {
+                        Color.clear.frame(height: line)
+                        sky.ground
+                    }
+                    HorizonView(date: sky.now, sunrise: sky.sunrise, sunset: sky.sunset, asr: sky.asr,
+                                lightX: sky.lightX)
+                        .frame(width: geo.size.width / 2)
+                        .frame(maxHeight: line * 0.3, alignment: .bottom)
+                        .frame(width: geo.size.width / 2, height: line + 8, alignment: .bottom)
+                }
+            }
+            .ignoresSafeArea()
+        }
+    }
+
+    /// The tabletop pose of iPhone Duo. The top half stands up and shows the sky with the
+    /// countdown. The flat half shows the sea with the times of the day. The fold is the horizon.
+    private func tabletopLayout(_ sky: SkyState, horizon: CGRect, safeTop: CGFloat) -> some View {
+        let latitude = AppSettings.selectedLatitude ?? AppSettings.selectedEmirate.latitude
+        return ZStack(alignment: .top) {
+            SeaHorizonView(date: sky.now, day: sky.day, latitude: latitude, foldY: horizon.midY + safeTop)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                VStack {
+                    if let snapshot = countdownManager.currentState {
+                        TabletopCountdown(snapshot: snapshot, ramadan: sky.ramadan, live: windowActive)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 26)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: horizon.minY)
+                .overlay(alignment: .topTrailing) {
+                    if let ramadan = sky.ramadan {
+                        RamadanLantern(lit: ramadan.phase != .fasting, cord: 34)
+                            .padding(.trailing, 40)
+                            .offset(y: -safeTop)
+                    }
+                }
+
+                Color.clear.frame(height: horizon.height)
+
+                VStack(spacing: 12) {
+                    Spacer(minLength: 0)
+                    if let ramadan = sky.ramadan {
+                        RamadanCard(status: ramadan, clockOffset: previewClock.offset)
+                    }
+                    TabletopChips(day: sky.day,
+                                  settings: countdownManager.currentState?.azanSettings,
+                                  activePrayer: effectivePrayer,
+                                  sunriseActive: countdownManager.currentState?.sunrise != nil,
+                                  ramadan: sky.ramadan != nil)
+                    dock
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+                .frame(maxHeight: .infinity)
+            }
+        }
+    }
+
+    /// The fold of iPhone Duo in the coordinates of `geo`, or nil on a screen without a fold.
+    private static func fold(in geo: GeometryProxy) -> CGRect? {
+        if #available(iOS 27.1, *) {
+            return geo.reservedRegions(kind: .division).first(where: \.isActive)?.frame
+        }
+        return nil
+    }
+
+    /// The horizon for the tabletop pose: the fold, when it goes across the screen and the hinge
+    /// is half open. A DEBUG launch argument, `-tabletopPreview YES`, puts it at the middle.
+    private func tabletopHorizon(_ fold: CGRect?, _ geo: GeometryProxy) -> CGRect? {
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "tabletopPreview") {
+            return CGRect(x: 0, y: geo.size.height / 2, width: geo.size.width, height: 0)
+        }
+        #endif
+        guard hingePartiallyOpen, let fold, fold.width > fold.height else { return nil }
+        return fold
+    }
+    #endif
+
     private var phaseKey: String {
         guard let phase = countdownManager.currentState?.phase else { return "" }
         return "\(phase.prayer.rawValue)|\(phase.isIqamaPhase)"
@@ -209,7 +435,7 @@ struct ContentView: View {
 
     // MARK: - Header
 
-    private var header: some View {
+    private func header(_ ramadan: RamadanStatus?) -> some View {
         HStack(alignment: .lastTextBaseline) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(previewClock.now, format: .dateTime.weekday(.wide).day().month(.wide))
@@ -230,12 +456,20 @@ struct ContentView: View {
             }
             Spacer()
         }
+        .overlay(alignment: .topTrailing) {
+            // The lantern hangs from the top of the screen. It lights from Maghrib to Imsak.
+            if let ramadan {
+                RamadanLantern(lit: ramadan.phase != .fasting, cord: 34)
+                    .offset(y: -40)
+                    .transition(.opacity)
+            }
+        }
     }
 
     // MARK: - Hero
 
     @ViewBuilder
-    private var hero: some View {
+    private func hero(_ ramadan: RamadanStatus?) -> some View {
         if let snapshot = countdownManager.currentState {
             CountdownDial(
                 prayer: snapshot.phase.prayer,
@@ -248,7 +482,8 @@ struct ContentView: View {
                 countdown: windowActive ? snapshot.formattedTimeRemaining : snapshot.shortFormattedTime,
                 remaining: snapshot.displayRemaining,
                 live: windowActive,
-                isSunrise: snapshot.sunrise != nil
+                isSunrise: snapshot.sunrise != nil,
+                ramadan: ramadanLabel(snapshot, ramadan)
             )
             .overlay {
                 StarBurst(trigger: burst,
@@ -281,6 +516,20 @@ struct ContentView: View {
             withAnimation(.spring(duration: 0.8, bounce: 0.1)) {
                 scrollPosition.scrollTo(edge: edge)
             }
+        }
+    }
+
+    /// In Ramadan the azan for Maghrib is the Iftar, and the azan for Fajr is Imsak, the end of
+    /// the Suhoor.
+    private func ramadanLabel(_ snapshot: CountdownSnapshot, _ ramadan: RamadanStatus?) -> CountdownDial.RamadanLabel? {
+        guard ramadan != nil, snapshot.sunrise == nil, !snapshot.phase.isIqamaPhase else { return nil }
+        switch snapshot.phase.prayer {
+        case .maghrib:
+            return .init(phase: "Iftar in", title: "Iftar", arabic: "الإفطار")
+        case .fajr:
+            return .init(phase: "Suhoor ends in", title: "Imsak", arabic: "الإمساك")
+        default:
+            return nil
         }
     }
 
@@ -540,3 +789,21 @@ struct UpdateBanner: View {
 #Preview {
     ContentView()
 }
+
+#if os(iOS)
+/// Reports whether the hinge of iPhone Duo is half open. The handler also runs when the view
+/// enters a window, so the first state arrives without a change of the hinge.
+private struct HingeObserver: ViewModifier {
+    @Binding var partiallyOpen: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 27.1, *) {
+            content.onHingeChange { _, new in
+                partiallyOpen = new.hinge?.status == .partiallyOpen
+            }
+        } else {
+            content
+        }
+    }
+}
+#endif

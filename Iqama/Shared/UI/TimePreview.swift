@@ -21,7 +21,11 @@ final class PreviewClock {
     func checkAvailability() async {
         #if DEBUG
         isAvailable = true
-        #elseif os(iOS)
+        #elseif os(macOS)
+        // A Mac build has no TestFlight. Turn the tools on with
+        // `defaults write com.tamimi.shared.Dubai-iqama showTestTools -bool YES`.
+        isAvailable = UserDefaults.standard.bool(forKey: AppSettings.Keys.showTestTools)
+        #else
         if case .verified(let transaction)? = try? await AppTransaction.shared {
             isAvailable = transaction.environment == .sandbox
         }

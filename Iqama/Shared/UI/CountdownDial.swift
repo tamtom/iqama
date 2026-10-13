@@ -11,11 +11,23 @@ struct CountdownDial: View {
     var remaining: TimeInterval
     var live: Bool                // false: freeze per-second animation (inactive Mac window)
     var isSunrise = false
+    /// In Ramadan, the azan for Maghrib is the Iftar and the azan for Fajr ends the Suhoor.
+    var ramadan: RamadanLabel? = nil
+
+    struct RamadanLabel: Equatable {
+        var phase: String
+        var title: String
+        var arabic: String
+    }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var accent: Color { isSunrise ? Theme.sunrise : isIqama ? Theme.accentGold : Theme.accentEmerald }
-    private var phaseText: String { isSunrise ? "Sunrise in" : isIqama ? "Iqama in" : "Azan in" }
+    private var accent: Color {
+        isSunrise ? Theme.sunrise : (isIqama || ramadan != nil) ? Theme.accentGold : Theme.accentEmerald
+    }
+    private var phaseText: String { isSunrise ? "Sunrise in" : ramadan?.phase ?? (isIqama ? "Iqama in" : "Azan in") }
+    private var titleText: String { isSunrise ? "Sunrise" : ramadan?.title ?? title }
+    private var arabicText: String { isSunrise ? "الشروق" : ramadan?.arabic ?? prayer.arabicName }
     private var finalMinute: Bool { remaining <= 60 }
     /// The countdown without its seconds ("1:32:46" → "1:32"), except in the final minute.
     private var rollKey: String { finalMinute ? countdown : String(countdown.dropLast(3)) }
@@ -54,25 +66,28 @@ struct CountdownDial: View {
                     .lineLimit(1)
 
                 VStack(spacing: 0) {
-                    Text(isSunrise ? "Sunrise" : title)
+                    Text(titleText)
                         .font(.system(size: 26, weight: .semibold, design: .rounded))
-                    Text(isSunrise ? "الشروق" : prayer.arabicName)
+                    Text(arabicText)
                         .font(.system(size: 17))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .foregroundStyle(Theme.textPrimary)
-                .id(isSunrise ? "sunrise" : prayer.rawValue)
+                .id(isSunrise ? "sunrise" : ramadan?.title ?? prayer.rawValue)
                 .transition(reduceMotion ? AnyTransition.opacity : AnyTransition(.blurReplace).combined(with: .scale(scale: 0.9)))
             }
             .padding(.horizontal, 36)
             .animation(.smooth(duration: 0.6), value: prayer)
             .animation(.smooth(duration: 0.6), value: isIqama)
             .animation(.smooth(duration: 0.6), value: isSunrise)
+            .animation(.smooth(duration: 0.6), value: ramadan)
         }
         .aspectRatio(1, contentMode: .fit)
         .frame(maxWidth: 300)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(isSunrise ? "Sunrise in \(countdown)" : "\(title) \(isIqama ? "iqama" : "azan") in \(countdown)")
+        .accessibilityLabel(isSunrise ? "Sunrise in \(countdown)"
+                            : ramadan.map { "\($0.phase) \(countdown)" }
+                            ?? "\(title) \(isIqama ? "iqama" : "azan") in \(countdown)")
     }
 }
 
