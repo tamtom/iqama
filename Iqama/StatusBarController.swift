@@ -32,9 +32,7 @@ class StatusBarController: NSObject {
         // Vibrant dark chrome so the wallpaper blur behind it tints toward
         // our dark celestial palette instead of fighting it.
         popover.appearance = NSAppearance(named: .vibrantDark)
-        popover.contentViewController = NSHostingController(
-            rootView: StatusBarMenuView()
-        )
+        popover.delegate = self
     }
 
     private func observeCountdownUpdates() {
@@ -75,10 +73,23 @@ class StatusBarController: NSObject {
             popover.performClose(nil)
         } else {
             if let button = statusItem.button {
+                // The content lives only while the popover is shown; popoverDidClose drops it.
+                popover.contentViewController = NSHostingController(
+                    rootView: StatusBarMenuView()
+                )
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
                 popover.contentViewController?.view.window?.makeKey()
             }
         }
+    }
+}
+
+extension StatusBarController: NSPopoverDelegate {
+    // A closed popover keeps its window, and SwiftUI keeps running the view's animations in it
+    // (the pulsing moon, the per-second digit roll): one opening left the app at ~45% CPU for
+    // good. Without content, nothing runs while the popover is closed.
+    func popoverDidClose(_ notification: Notification) {
+        popover.contentViewController = nil
     }
 }
 #endif

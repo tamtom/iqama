@@ -119,8 +119,9 @@ struct LiveDot: View {
         if value && !reduceMotion {
             withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) { on = true }
         } else {
-            // A finite animation replaces the repeating one, so it stops.
-            withAnimation(.easeInOut(duration: 0.3)) { on = true }
+            // A finite animation replaces the repeating one, so it stops. The value must change:
+            // `on` is already true while it pulses, and setting it again starts no animation.
+            withAnimation(.easeInOut(duration: 0.3)) { on = false }
         }
     }
 }
