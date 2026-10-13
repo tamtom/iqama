@@ -73,7 +73,8 @@ enum AppSettings {
         static let nagIntervalMinutes = 15
 
         static let adhanSound = "makkah"   // AdhanSound.makkah
-        static let adhanPrayer = true   // the Adhan plays for every prayer until the user turns one off
+        // Off until the user turns a prayer on, so an update keeps the old alerts (no azan alert, no Adhan).
+        static let adhanPrayer = false
 
         static let ramadanMode = RamadanMode.auto.rawValue
 
