@@ -1,22 +1,24 @@
 import SwiftUI
 import MetalKit
 
-/// The sky over the sea, for the tabletop pose of iPhone Duo. The fold is the horizon: the sun
-/// rises out of the sea on the right (east) and sets into it on the left (west), at the real
-/// times of the day. The shaders are in `SeaHorizon.metal`.
+/// The sky over the sea: the sea screen, and the tabletop pose of iPhone Duo, where the fold is
+/// the horizon. The sun rises out of the sea on the right (east) and sets into it on the left
+/// (west), at the real times of the day. The shaders are in `SeaHorizon.metal`.
 struct SeaHorizonView: View {
     var date: Date
     var day: DailyPrayerTimes?
     var latitude: Double
     /// The horizon, in points from the top of the view.
     var foldY: CGFloat
+    /// True stops the waves, for example in an inactive Mac window.
+    var paused = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         SeaMetalView(sky: SeaSky(date: date, day: day, latitude: latitude),
                      foldY: foldY,
-                     animated: !reduceMotion)
+                     animated: !reduceMotion && !paused)
             .accessibilityHidden(true)
     }
 }
@@ -90,8 +92,8 @@ struct SeaSky: Equatable {
 
         // The moon follows the path of the sun, later by its phase: it is new with the sun and
         // full twelve hours after it.
-        let phase = day.moonPhase - floor(day.moonPhase)
-        let moonDate = date.addingTimeInterval(-phase * 24.84 * 3600)
+        let phase = MoonInfo.phase(at: date)
+        let moonDate = date.addingTimeInterval(-MoonInfo.lag(phase))
         moonElevation = trueAltitude(moonDate)
         moonAzimuth = azimuth(moonDate)
         moon = direction(moonAzimuth, moonElevation)

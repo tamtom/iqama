@@ -1,8 +1,7 @@
-#if os(iOS)
 import SwiftUI
 
-/// The large countdown without a dial, for iPhone Duo: in the sky half of the tabletop pose,
-/// and under the skyline of the open layout. The sun itself crosses the sky above it.
+/// The large countdown without a dial: in the sky of the sea screen, and under the skyline of
+/// the open layout of iPhone Duo. The sun itself crosses the sky above it.
 struct TabletopCountdown: View {
     var snapshot: CountdownSnapshot
     var ramadan: RamadanStatus?
@@ -72,7 +71,7 @@ struct TabletopCountdown: View {
     }
 }
 
-/// The six times of the day in one row, on the flat half of the tabletop pose.
+/// The six times of the day on the sea, in one row or in two rows of three.
 struct TabletopChips: View {
     var day: DailyPrayerTimes?
     var settings: AzanSettings?
@@ -80,6 +79,8 @@ struct TabletopChips: View {
     /// True when the countdown shows the sunrise. Then the sunrise chip is the active chip.
     var sunriseActive: Bool
     var ramadan: Bool
+    /// 6 gives one row. 3 gives two rows, for a narrow screen.
+    var columns = 6
 
     private static let coral = Color(red: 1.0, green: 0.62, blue: 0.42)
 
@@ -93,7 +94,7 @@ struct TabletopChips: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: columns), spacing: 6) {
             ForEach(chips) { chip in
                 VStack(spacing: 2) {
                     Text(chip.name)
@@ -161,4 +162,3 @@ struct TabletopChips: View {
         ]
     }
 }
-#endif

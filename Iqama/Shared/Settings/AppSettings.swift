@@ -33,6 +33,9 @@ enum AppSettings {
         // Ramadan mode
         static let ramadanMode = "ramadanMode"              // RamadanMode.rawValue
 
+        // Appearance
+        static let homeStyle = "homeStyle"                  // HomeStyle.rawValue
+
         // Test tools (TestFlight, Debug, or a Mac with `showTestTools` set)
         static let showTestTools = "showTestTools"          // macOS: shows the test tools in a Release build
 
@@ -77,6 +80,7 @@ enum AppSettings {
         static let adhanPrayer = false
 
         static let ramadanMode = RamadanMode.auto.rawValue
+        static let homeStyle = HomeStyle.sky.rawValue
 
         static let locationMode = "auto"
         static let selectedEmirate = Emirate.dubai.slug
@@ -180,6 +184,12 @@ enum AppSettings {
     static var ramadanMode: RamadanMode {
         RamadanMode(rawValue: shared.string(forKey: Keys.ramadanMode) ?? Defaults.ramadanMode) ?? .auto
     }
+
+    // MARK: - Appearance
+
+    /// The main screen: `sky` is the sky over the skyline, `sea` is the sky over the sea. The
+    /// tabletop pose of iPhone Duo always shows the sea.
+    enum HomeStyle: String, CaseIterable { case sky, sea }
 
     // MARK: - Location
 

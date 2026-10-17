@@ -32,6 +32,9 @@ struct ContentView: View {
     private var locationConfirmed = false
     @AppStorage(AppSettings.Keys.ramadanMode, store: AppSettings.shared)
     private var ramadanMode = AppSettings.Defaults.ramadanMode
+    @AppStorage(AppSettings.Keys.homeStyle, store: AppSettings.shared)
+    private var homeStyle = AppSettings.Defaults.homeStyle
+    private var seaHome: Bool { homeStyle == AppSettings.HomeStyle.sea.rawValue }
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
@@ -64,6 +67,7 @@ struct ContentView: View {
             let sunset = day?.prayerTime(for: .maghrib)
             let asr = day?.prayerTime(for: .asr)
             let body = SkyGeometry.bodyNormalized(at: now, day: day)
+            let moonUp = body.isDay || MoonInfo.isUp(at: now, day: day)
             let sky = SkyState(now: now, day: day, sunrise: sunrise, sunset: sunset, asr: asr,
                                lightX: body.isDay ? 0.5 - 0.5 * cos(body.x * .pi) : 0.5,
                                ground: SkyPalette.colors(at: now, sunrise: sunrise, sunset: sunset, asr: asr).groundColor,
@@ -77,19 +81,33 @@ struct ContentView: View {
                     .ignoresSafeArea()
 
                 // 2. The living sky tints the blurred wallpaper without fully blocking it.
-                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset, asr: asr)
-                    .opacity(0.7)
-                    .ignoresSafeArea()
+                //    The sea screen covers the window, so it needs no sky behind it.
+                if !seaHome {
+                    SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, moonUp: moonUp,
+                             sunrise: sunrise, sunset: sunset, asr: asr)
+                        .opacity(0.7)
+                        .ignoresSafeArea()
+                }
 
                 // 3. AppKit interop: make the host NSWindow transparent.
                 WindowTransparencyConfigurator()
                     .frame(width: 0, height: 0)
 
-                stackedLayout(sky)
+                if seaHome {
+                    GeometryReader { geo in
+                        seaHomeLayout(sky, size: geo.size, safeTop: geo.safeAreaInsets.top)
+                    }
+                } else {
+                    stackedLayout(sky)
+                }
                 #else
                 Color.black.ignoresSafeArea()
-                SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, sunrise: sunrise, sunset: sunset, asr: asr)
-                    .ignoresSafeArea()
+                // The sea screen covers the screen, so it needs no sky behind it.
+                if !seaHome {
+                    SkyScene(bodyNormalizedX: body.x, bodyIsDay: body.isDay, moonUp: moonUp,
+                             sunrise: sunrise, sunset: sunset, asr: asr)
+                        .ignoresSafeArea()
+                }
 
                 // A wide screen (the inner display of iPhone Duo, an iPad in landscape) shows
                 // two columns. A tall screen shows one column that scrolls.
@@ -98,11 +116,22 @@ struct ContentView: View {
                 GeometryReader { geo in
                     let fold = Self.fold(in: geo)
                     if let horizon = tabletopHorizon(fold, geo) {
-                        tabletopLayout(sky, horizon: horizon, safeTop: geo.safeAreaInsets.top)
+                        seaLayout(sky, horizon: horizon, safeTop: geo.safeAreaInsets.top)
                     } else if let fold, fold.height > fold.width, geo.size.width > geo.size.height {
-                        openLayout(sky, fold: fold, size: geo.size)
+                        if seaHome {
+                            openSeaLayout(sky, fold: fold, size: geo.size, safeTop: geo.safeAreaInsets.top)
+                        } else {
+                            openLayout(sky, fold: fold, size: geo.size)
+                        }
+                    } else if seaHome {
+                        let inRail = Self.hasSideRail(geo)
+                        seaHomeLayout(sky, size: geo.size, safeTop: geo.safeAreaInsets.top, inRail: inRail)
+                            .overlay(alignment: .topLeading) { if inRail { sideRail(geo) } }
                     } else if horizontalSizeClass == .regular && geo.size.width > geo.size.height * 1.15 {
                         wideLayout(sky, fold: nil)
+                    } else if Self.hasSideRail(geo) {
+                        stackedLayout(sky, inRail: true)
+                            .overlay(alignment: .topLeading) { sideRail(geo) }
                     } else {
                         stackedLayout(sky)
                     }
@@ -199,7 +228,9 @@ struct ContentView: View {
     // MARK: - Layouts
 
     /// One column that scrolls: the iPhone, the outer display of iPhone Duo, and the Mac.
-    private func stackedLayout(_ sky: SkyState) -> some View {
+    /// One column that scrolls. With `inRail`, the controls are in the rail and only the panels
+    /// float at the bottom.
+    private func stackedLayout(_ sky: SkyState, inRail: Bool = false) -> some View {
         ScrollView {
             VStack(spacing: 0) {
                 #if os(macOS)
@@ -275,7 +306,9 @@ struct ContentView: View {
             #endif
         }
         .scrollIndicators(.hidden)
-        .safeAreaBar(edge: .bottom) { dock }
+        .safeAreaBar(edge: .bottom) {
+            if inRail { dockPanels.padding(.bottom, 6) } else { dock }
+        }
         .scrollPosition($scrollPosition)
         .onChange(of: effectivePrayer, initial: true) { _, prayer in
             scrollToActive(prayer)
@@ -285,6 +318,78 @@ struct ContentView: View {
             if shown { withAnimation(.spring(duration: 0.6)) { scrollPosition.scrollTo(edge: .top) } }
             else { scrollToActive(effectivePrayer) }
         }
+    }
+
+    /// The sky over the sea. The sky above the horizon shows the countdown, and the sea below it
+    /// shows the times of the day. In the tabletop pose of iPhone Duo the top half stands up and
+    /// the fold is the horizon. `header` adds the date above the countdown. With `inRail`, the
+    /// controls are in the rail and only the panels float at the bottom.
+    private func seaLayout(_ sky: SkyState, horizon: CGRect, safeTop: CGFloat, columns: Int = 6,
+                           header showHeader: Bool = false, countdownSize: CGFloat = 88,
+                           inRail: Bool = false) -> some View {
+        let latitude = AppSettings.selectedLatitude ?? AppSettings.selectedEmirate.latitude
+        return ZStack(alignment: .top) {
+            SeaHorizonView(date: sky.now, day: sky.day, latitude: latitude, foldY: horizon.midY + safeTop,
+                           paused: !windowActive)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    if showHeader {
+                        header(sky.ramadan)
+                            .padding(.horizontal, 28)
+                            #if os(macOS)
+                            .padding(.top, 30)       // clear the window controls
+                            #else
+                            .padding(.top, 12)       // the outer display of iPhone Duo has no top safe area
+                            #endif
+                    }
+                    if let snapshot = countdownManager.currentState {
+                        TabletopCountdown(snapshot: snapshot, ramadan: sky.ramadan, live: windowActive,
+                                          countdownSize: countdownSize)
+                            .padding(.horizontal, 24)
+                            .padding(.top, showHeader ? 18 : 26)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: horizon.minY)
+                .overlay(alignment: .topTrailing) {
+                    if let ramadan = sky.ramadan {
+                        RamadanLantern(lit: ramadan.phase != .fasting, cord: 34)
+                            .padding(.trailing, 40)
+                            .offset(y: -safeTop)
+                    }
+                }
+
+                Color.clear.frame(height: horizon.height)
+
+                VStack(spacing: 12) {
+                    Spacer(minLength: 0)
+                    if let ramadan = sky.ramadan {
+                        RamadanCard(status: ramadan, clockOffset: previewClock.offset)
+                    }
+                    TabletopChips(day: sky.day,
+                                  settings: countdownManager.currentState?.azanSettings,
+                                  activePrayer: effectivePrayer,
+                                  sunriseActive: countdownManager.currentState?.sunrise != nil,
+                                  ramadan: sky.ramadan != nil,
+                                  columns: columns)
+                    if inRail { dockPanels } else { dock }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+                .frame(maxHeight: .infinity)
+            }
+        }
+    }
+
+    /// The sea screen on a screen without a fold, or on the outer display of iPhone Duo: the
+    /// horizon is across the middle.
+    private func seaHomeLayout(_ sky: SkyState, size: CGSize, safeTop: CGFloat, inRail: Bool = false) -> some View {
+        seaLayout(sky, horizon: CGRect(x: 0, y: (size.height * 0.5).rounded(), width: size.width, height: 0),
+                  safeTop: safeTop, columns: size.width >= 560 ? 6 : 3, header: true,
+                  countdownSize: min(88, max(56, size.height * 0.12)), inRail: inRail)
     }
 
     #if os(iOS)
@@ -365,54 +470,6 @@ struct ContentView: View {
         }
     }
 
-    /// The tabletop pose of iPhone Duo. The top half stands up and shows the sky with the
-    /// countdown. The flat half shows the sea with the times of the day. The fold is the horizon.
-    private func tabletopLayout(_ sky: SkyState, horizon: CGRect, safeTop: CGFloat) -> some View {
-        let latitude = AppSettings.selectedLatitude ?? AppSettings.selectedEmirate.latitude
-        return ZStack(alignment: .top) {
-            SeaHorizonView(date: sky.now, day: sky.day, latitude: latitude, foldY: horizon.midY + safeTop)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                VStack {
-                    if let snapshot = countdownManager.currentState {
-                        TabletopCountdown(snapshot: snapshot, ramadan: sky.ramadan, live: windowActive)
-                            .padding(.horizontal, 24)
-                            .padding(.top, 26)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: horizon.minY)
-                .overlay(alignment: .topTrailing) {
-                    if let ramadan = sky.ramadan {
-                        RamadanLantern(lit: ramadan.phase != .fasting, cord: 34)
-                            .padding(.trailing, 40)
-                            .offset(y: -safeTop)
-                    }
-                }
-
-                Color.clear.frame(height: horizon.height)
-
-                VStack(spacing: 12) {
-                    Spacer(minLength: 0)
-                    if let ramadan = sky.ramadan {
-                        RamadanCard(status: ramadan, clockOffset: previewClock.offset)
-                    }
-                    TabletopChips(day: sky.day,
-                                  settings: countdownManager.currentState?.azanSettings,
-                                  activePrayer: effectivePrayer,
-                                  sunriseActive: countdownManager.currentState?.sunrise != nil,
-                                  ramadan: sky.ramadan != nil)
-                    dock
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 8)
-                .frame(maxHeight: .infinity)
-            }
-        }
-    }
-
     /// The inner display of iPhone Duo, open. One sky goes across the whole width, with the
     /// day arc from the sunrise on the right (east) to Maghrib on the left (west). Below the
     /// skyline the fold divides the screen: the countdown on the left, the prayers on the right.
@@ -481,7 +538,7 @@ struct ContentView: View {
             .padding(.top, line + 12)
             .frame(width: size.width, height: size.height, alignment: .top)
 
-            rail
+            rail(top: 130)
                 .frame(width: 84, height: size.height + 34)
                 .offset(x: size.width)
         }
@@ -505,8 +562,82 @@ struct ContentView: View {
         }
     }
 
-    /// The controls of the open layout in one column, in the side safe area below the camera.
-    private var rail: some View {
+    /// The sea screen on the inner display of iPhone Duo, open. The horizon is across the middle.
+    /// The fold divides the screen: the date and the countdown are in the sky on the left, and
+    /// the times of the day are on the sea on the right. No text is on the fold.
+    private func openSeaLayout(_ sky: SkyState, fold: CGRect, size: CGSize, safeTop: CGFloat) -> some View {
+        let line = (size.height * 0.5).rounded()
+        let latitude = AppSettings.selectedLatitude ?? AppSettings.selectedEmirate.latitude
+        let left = max(fold.minX, 0)
+        return ZStack(alignment: .topLeading) {
+            SeaHorizonView(date: sky.now, day: sky.day, latitude: latitude, foldY: line + safeTop)
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                header(sky.ramadan)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer(minLength: 0)
+                if let snapshot = countdownManager.currentState {
+                    TabletopCountdown(snapshot: snapshot, ramadan: sky.ramadan, live: windowActive,
+                                      countdownSize: 64)
+                    iqamaPill(snapshot)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(width: left, height: line)
+
+            HStack(alignment: .top, spacing: 0) {
+                VStack {
+                    if let ramadan = sky.ramadan {
+                        RamadanCard(status: ramadan, clockOffset: previewClock.offset)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .frame(width: left)
+
+                Color.clear.frame(width: fold.width)
+
+                VStack(spacing: 12) {
+                    TabletopChips(day: sky.day,
+                                  settings: countdownManager.currentState?.azanSettings,
+                                  activePrayer: effectivePrayer,
+                                  sunriseActive: countdownManager.currentState?.sunrise != nil,
+                                  ramadan: sky.ramadan != nil,
+                                  columns: 3)
+                    dockPanels
+                }
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.top, line + 20)
+            .frame(width: size.width, height: size.height, alignment: .top)
+
+            rail(top: 130)
+                .frame(width: 84, height: size.height + 34)
+                .offset(x: size.width)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+    }
+
+    /// The outer display of iPhone Duo: the camera and the status bar are in a column at the
+    /// side, so the controls go in the rail below them. An iPhone in landscape also has side
+    /// safe areas, but it is wide.
+    private static func hasSideRail(_ geo: GeometryProxy) -> Bool {
+        geo.safeAreaInsets.trailing >= 60 && geo.size.height > geo.size.width
+    }
+
+    /// The rail in the trailing safe area of `geo`.
+    private func sideRail(_ geo: GeometryProxy) -> some View {
+        rail(top: 168)
+            .frame(width: geo.safeAreaInsets.trailing, height: geo.size.height + geo.safeAreaInsets.bottom)
+            .offset(x: geo.size.width)
+    }
+
+    /// The controls in one column, in the side safe area below the camera and the status bar.
+    /// `top` is the space for them.
+    private func rail(top: CGFloat) -> some View {
         GlassEffectContainer(spacing: 8) {
             VStack(spacing: 14) {
                 VStack(spacing: 6) {
@@ -518,7 +649,7 @@ struct ContentView: View {
                         .minimumScaleFactor(0.7)
                         .frame(width: 76)
                 }
-                .padding(.top, 130)
+                .padding(.top, top)
 
                 Spacer(minLength: 0)
 

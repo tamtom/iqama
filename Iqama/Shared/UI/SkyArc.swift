@@ -195,6 +195,9 @@ private struct ArcContent: View, Animatable {
         let glow = cycle.isDay ? Theme.accentGold : Color(red: 0.8, green: 0.86, blue: 1)
         // At dawn the sun is under the horizon. It gets brighter until the sunrise.
         let bodyOpacity = t < 0 ? max(0.35, 1 + t * 6) : 1
+        // At night the moon shows only when the real moon is above the horizon. When it is
+        // not, a small point shows the time on the night arc.
+        let moonUp = cycle.isDay || MoonInfo.isUp(at: date, day: todayPrayerTimes)
 
         ZStack {
             // 1. Dashed arc trajectory
@@ -248,8 +251,17 @@ private struct ArcContent: View, Animatable {
 
             // 6. Sun / moon glyph at current position
             // Tap the sun or moon for what it shows, so the moon's phase is not read as a prayer state.
-            let glyph = CelestialBodyGlyph(isDay: cycle.isDay, size: bodySize,
-                                           moonPhase: todayPrayerTimes?.moonPhase ?? 0.5)
+            let glyph = ZStack {
+                if moonUp {
+                    CelestialBodyGlyph(isDay: cycle.isDay, size: bodySize,
+                                       moonPhase: todayPrayerTimes?.moonPhase ?? 0.5)
+                } else {
+                    Circle()
+                        .fill(glow.opacity(0.8))
+                        .frame(width: 5, height: 5)
+                        .shadow(color: glow.opacity(0.7), radius: 4)
+                }
+            }
                 .frame(width: bodySize, height: bodySize)
                 .opacity(bodyOpacity)
             if interactive {
@@ -257,7 +269,7 @@ private struct ArcContent: View, Animatable {
                     glyph.contentShape(.circle.inset(by: -6))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(cycle.isDay ? "Sun" : "Moon phase")
+                .accessibilityLabel(cycle.isDay ? "Sun" : moonUp ? "Moon phase" : "Night, the moon is down")
                 .popover(isPresented: $showInfo) {
                     SkyBodyInfo(cycle: cycle, day: todayPrayerTimes)
                         .presentationCompactAdaptation(.popover)
@@ -475,6 +487,12 @@ private struct SkyBodyInfo: View {
         var text = "The night arc goes back from Maghrib in the west (left) to Fajr in the east (right). "
             + "½ is the middle of the night. ⅓ is the start of the last third. "
             + "The moon shows tonight's real phase, from the Hijri date."
+        if let times = MoonInfo.riseAndSet(at: cycle.start, day: day) {
+            let rise = times.rise.formatted(date: .omitted, time: .shortened)
+            let set = times.set.formatted(date: .omitted, time: .shortened)
+            text += " It shows only while the real moon is above the horizon. It rises at about \(rise)"
+                + " and sets at about \(set)."
+        }
         if let day {
             let phase = day.moonPhase
             if phase < 0.04 || phase > 0.96 {
@@ -492,6 +510,39 @@ private struct SkyBodyInfo: View {
 }
 
 enum MoonInfo {
+    /// The fraction of the lunar cycle at `date` (0 = new moon, 0.5 = full), from the mean
+    /// synodic month. It changes smoothly. The Hijri day changes in steps, and after Isha the
+    /// app shows the next day, so the position of the moon does not use it.
+    static func phase(at date: Date) -> Double {
+        let newMoon = Date(timeIntervalSince1970: 947_182_440)   // 6 January 2000, 18:14 UTC
+        let cycles = date.timeIntervalSince(newMoon) / 86_400 / 29.530588853
+        return cycles - floor(cycles)
+    }
+
+    /// The moon follows the path of the sun, later by its phase: it is new with the sun and
+    /// full about twelve hours after it. The tabletop sea uses the same model.
+    static func lag(_ phase: Double) -> TimeInterval {
+        (phase - floor(phase)) * 24.84 * 3600
+    }
+
+    /// The clock times of the moonrise and the moonset: the sunrise and Maghrib, later by the lag.
+    static func riseAndSet(at date: Date, day: DailyPrayerTimes?) -> (rise: Date, set: Date)? {
+        guard let day, let sunrise = day.sunriseTime, let maghrib = day.prayerTime(for: .maghrib) else { return nil }
+        let lag = lag(phase(at: date))
+        return (sunrise.addingTimeInterval(lag), maghrib.addingTimeInterval(lag))
+    }
+
+    /// True when the moon is above the horizon at `date`. Without data it is true.
+    static func isUp(at date: Date, day: DailyPrayerTimes?) -> Bool {
+        guard let day, let sunrise = day.sunriseTime, let maghrib = day.prayerTime(for: .maghrib) else { return true }
+        // Compare clock times: `day` can be the day before or after `date`.
+        let calendar = Calendar.current
+        func clock(_ d: Date) -> TimeInterval { d.timeIntervalSince(calendar.startOfDay(for: d)) }
+        var t = clock(date.addingTimeInterval(-lag(phase(at: date)))) - clock(sunrise)
+        if t < 0 { t += 86_400 }
+        return t < clock(maghrib) - clock(sunrise)
+    }
+
     /// The lit fraction of the disc for a phase in 0…1 (0 = new, 0.5 = full).
     static func illumination(_ phase: Double) -> Double {
         (1 - cos(2 * .pi * phase)) / 2

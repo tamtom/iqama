@@ -21,6 +21,14 @@ final class PreviewClock {
     func checkAvailability() async {
         #if DEBUG
         isAvailable = true
+        // `-previewClock HH:mm` starts the preview at that time of today, for recordings.
+        if let clock = UserDefaults.standard.string(forKey: "previewClock") {
+            let parts = clock.split(separator: ":").compactMap { Int($0) }
+            if parts.count == 2,
+               let date = Calendar.current.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: .now) {
+                jump(to: date)
+            }
+        }
         #elseif os(macOS)
         // A Mac build has no TestFlight. Turn the tools on with
         // `defaults write com.tamimi.shared.Dubai-iqama showTestTools -bool YES`.

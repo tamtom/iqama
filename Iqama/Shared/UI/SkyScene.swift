@@ -11,6 +11,8 @@ import SwiftUI
 struct SkyScene: View {
     var bodyNormalizedX: Double
     var bodyIsDay: Bool
+    /// False at night when the real moon is below the horizon: then the moon gives no light.
+    var moonUp = true
     var sunrise: Date?
     var sunset: Date?
     var asr: Date?
@@ -31,7 +33,7 @@ struct SkyScene: View {
             GeometryReader { geo in
                 let source = lightSource(in: geo.size)
                 ZStack {
-                    SkyLight(source: source, bodyIsDay: bodyIsDay, sunrise: sunrise, sunset: sunset, asr: asr,
+                    SkyLight(source: source, bodyIsDay: bodyIsDay, moonUp: moonUp, sunrise: sunrise, sunset: sunset, asr: asr,
                              paused: isInactive || reduceMotion)
 
                     // Stars fade in as the light goes.
@@ -76,6 +78,7 @@ struct SkyScene: View {
 private struct SkyLight: View {
     var source: CGPoint
     var bodyIsDay: Bool
+    var moonUp: Bool
     var sunrise: Date?
     var sunset: Date?
     var asr: Date?
@@ -107,15 +110,17 @@ private struct SkyLight: View {
                              colors: meshColors(sky, sunX: bodyIsDay ? unit.x : 0.5))
 
                 // The sun or moon lights up the sky around it; low warm light spreads further.
-                RadialGradient(
-                    colors: bodyIsDay
-                        ? [sky.glow.opacity(0.09 + 0.105 * sky.warmth), sky.glow.opacity(0.018 + 0.048 * sky.warmth), .clear]
-                        : [sky.glow.opacity(0.16), .clear],
-                    center: unit,
-                    startRadius: 2,
-                    endRadius: bodyIsDay ? geo.size.height * (0.5 + 0.3 * sky.warmth) : 300
-                )
-                .blendMode(.screen)
+                if bodyIsDay || moonUp {
+                    RadialGradient(
+                        colors: bodyIsDay
+                            ? [sky.glow.opacity(0.09 + 0.105 * sky.warmth), sky.glow.opacity(0.018 + 0.048 * sky.warmth), .clear]
+                            : [sky.glow.opacity(0.16), .clear],
+                        center: unit,
+                        startRadius: 2,
+                        endRadius: bodyIsDay ? geo.size.height * (0.5 + 0.3 * sky.warmth) : 300
+                    )
+                    .blendMode(.screen)
+                }
 
 
                 if sky.light > 0.25 {

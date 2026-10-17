@@ -176,7 +176,7 @@ fragment float4 seaSceneFragment(SeaVertexOut in [[stage_in]],
 
         float moonVis = u.moon.w;
         if (moonVis > 0.0) {
-            float2 md = (float2(fc.x, ly) - u.moonPx.xy) / (1.6 * ppd);
+            float2 md = (float2(fc.x, ly) - u.moonPx.xy) / (2.4 * ppd);
             float mr = length(md);
             float pa = u.moonPx.z;
             float3 sv = float3(u.moonLit.xy * sin(pa), cos(pa));
@@ -240,7 +240,7 @@ fragment float4 seaSceneFragment(SeaVertexOut in [[stage_in]],
         float3 E = u.disk.rgb * PI_F * sunR * sunR * 2.5;
         col += glint(n, V, u.sun.xyz, s2 + sunR * sunR * 0.15, E) * sunUp;
         if (u.moon.w > 0.0 && u.moon.y > 0.0) {
-            float mR = 1.6 * PI_F / 180.0;
+            float mR = 2.4 * PI_F / 180.0;
             col += glint(n, V, u.moon.xyz, s2 + mR * mR * 0.15, u.moonCol.rgb * PI_F * mR * mR * 0.6) * u.moon.w;
         }
         float3 horizon = envSample(env, envSampler, az, 0.2 * PI_F / 180.0);

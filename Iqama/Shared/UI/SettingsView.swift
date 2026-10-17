@@ -33,6 +33,8 @@ struct SettingsView: View {
     // Ramadan mode
     @AppStorage(AppSettings.Keys.ramadanMode, store: AppSettings.shared)
     private var ramadanMode = AppSettings.Defaults.ramadanMode
+    @AppStorage(AppSettings.Keys.homeStyle, store: AppSettings.shared)
+    private var homeStyle = AppSettings.Defaults.homeStyle
 
     // Calculation method
     @AppStorage(AppSettings.Keys.calcMethod, store: AppSettings.shared)
@@ -81,6 +83,7 @@ struct SettingsView: View {
             if !isUAE { methodSection }
             iqamaSection
             adhanSection
+            appearanceSection
             ramadanSection
             notificationsSection
             nagSection
@@ -237,6 +240,20 @@ struct SettingsView: View {
             #else
             Text("The full Adhan plays at the azan time of each prayer that is on, while Iqama runs in the menu bar.")
             #endif
+        }
+    }
+
+    private var appearanceSection: some View {
+        Section {
+            Picker("Home screen", selection: $homeStyle) {
+                Text("Sky").tag(AppSettings.HomeStyle.sky.rawValue)
+                Text("Sea").tag(AppSettings.HomeStyle.sea.rawValue)
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text("Appearance")
+        } footer: {
+            Text("Sea shows the sky over the sea, with the sun and the moon at their real positions. On iPhone Duo in the tabletop pose, the app always shows the sea.")
         }
     }
 
