@@ -1,6 +1,11 @@
 # Iqama
 
-A native macOS prayer-times app with a celestial-themed Liquid Glass UI, a menu-bar countdown, and matching home-screen widgets. **Location-aware**: it shows prayer times for wherever you are.
+An open-source prayer-times app for **iPhone, Mac, and iPhone Duo**. It shows the five prayer times, plays the Adhan, and counts down to the iqama. It has a living sky that follows the real sun and moon, widgets, a Live Activity on iPhone, and a menu-bar countdown on the Mac. **Location-aware**: it shows prayer times for wherever you are.
+
+<p align="center">
+  <a href="https://apps.apple.com/app/id6782582509">iPhone and iPhone Duo: App Store</a> ·
+  <a href="https://github.com/tamtom/iqama/releases/latest">Mac: download the DMG</a>
+</p>
 
 - **Inside the UAE** → official **Awqaf** (UAE General Authority of Islamic Affairs & Endowments) static data, bundled for all **7 emirates** — no network required.
 - **Anywhere else** → the free **[Aladhan](https://aladhan.com/prayer-times-api)** API, fetched and cached, with a configurable calculation method.
@@ -49,6 +54,10 @@ Same theme scaled down — note the live countdown next to the moon icon in the 
 Medium widget on the desktop showing the sky arc, the next prayer name in Arabic + English, the countdown, and a quick rail of today's times.
 
 ## Install
+
+**iPhone and iPhone Duo:** get [Prayer Times: Iqama](https://apps.apple.com/app/id6782582509) from the App Store (iOS 26 or later). On iPhone Duo, the app uses both displays: the outer display, the open layout, and the tabletop pose.
+
+**Mac:**
 
 1. Download the latest DMG from the [Releases page](https://github.com/tamtom/iqama/releases/latest).
 2. Open the DMG and drag **Iqama** into your **Applications** folder.
@@ -134,4 +143,4 @@ Without this, the main window and menu-bar countdown still show non-UAE times co
 
 ## License
 
-See [LICENSE](LICENSE) if present, otherwise all rights reserved.
+The code is under the [MIT License](LICENSE). Each Adhan voice in `Iqama/Resources/Adhan` has its own source, and Settings > Adhan shows the credit for each voice.
