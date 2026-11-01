@@ -116,7 +116,24 @@ struct ContentView: View {
                 GeometryReader { geo in
                     let fold = Self.fold(in: geo)
                     if let horizon = tabletopHorizon(fold, geo) {
-                        seaLayout(sky, horizon: horizon, safeTop: geo.safeAreaInsets.top)
+                        // The inner display has the camera and the status bar in a column at the
+                        // side, so the controls go in the rail, as on the open display.
+                        let inRail = geo.safeAreaInsets.trailing >= 60
+                        Group {
+                            if seaHome {
+                                seaLayout(sky, horizon: horizon, safeTop: geo.safeAreaInsets.top, inRail: inRail)
+                            } else {
+                                tabletopSkyLayout(sky, horizon: horizon, size: geo.size, inRail: inRail,
+                                                  trailing: geo.safeAreaInsets.trailing)
+                            }
+                        }
+                        .overlay(alignment: .topLeading) {
+                            if inRail {
+                                rail(top: 130)
+                                    .frame(width: 84, height: geo.size.height + 34)
+                                    .offset(x: geo.size.width)
+                            }
+                        }
                     } else if let fold, fold.height > fold.width, geo.size.width > geo.size.height {
                         if seaHome {
                             openSeaLayout(sky, fold: fold, size: geo.size, safeTop: geo.safeAreaInsets.top)
@@ -541,6 +558,76 @@ struct ContentView: View {
             rail(top: 130)
                 .frame(width: 84, height: size.height + 34)
                 .offset(x: size.width)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+    }
+
+    /// The tabletop pose of iPhone Duo with the Sky home screen. The standing half is the sky,
+    /// with the date, the countdown, and the day arc, and the skyline stands on the fold. The
+    /// half on the table shows the times of the day.
+    private func tabletopSkyLayout(_ sky: SkyState, horizon: CGRect, size: CGSize, inRail: Bool,
+                                   trailing: CGFloat) -> some View {
+        let line = horizon.minY
+        // The skyline and the ground also go under the rail in the trailing safe area.
+        let full = size.width + trailing
+        let half = (full / 2).rounded()
+        return ZStack(alignment: .topLeading) {
+            VStack(spacing: 0) {
+                Color.clear.frame(height: line)
+                sky.ground
+            }
+            .frame(width: full)
+            .ignoresSafeArea(edges: .vertical)
+
+            HStack(alignment: .bottom, spacing: 0) {
+                HorizonView(date: sky.now, sunrise: sky.sunrise, sunset: sky.sunset, asr: sky.asr,
+                            lightX: sky.lightX)
+                    .frame(width: half)
+                HorizonView(date: sky.now, sunrise: sky.sunrise, sunset: sky.sunset, asr: sky.asr,
+                            lightX: sky.lightX)
+                    .scaleEffect(x: -1)
+                    .frame(width: full - half)
+            }
+            .frame(width: full, height: line + 4, alignment: .bottom)
+
+            SkyArcView(date: sky.now,
+                       todayPrayerTimes: sky.day,
+                       activePrayer: effectivePrayer,
+                       animateIn: true)
+                .frame(width: size.width, height: line - 30)
+
+            VStack(spacing: 10) {
+                header(sky.ramadan)
+                    .padding(.horizontal, 28)
+                    .padding(.top, 14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if let snapshot = countdownManager.currentState {
+                    TabletopCountdown(snapshot: snapshot, ramadan: sky.ramadan, live: windowActive,
+                                      countdownSize: 64)
+                    iqamaPill(snapshot)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(width: size.width, height: line)
+
+            VStack(spacing: 12) {
+                Spacer(minLength: 0)
+                if let ramadan = sky.ramadan {
+                    RamadanCard(status: ramadan, clockOffset: previewClock.offset)
+                }
+                TabletopChips(day: sky.day,
+                              settings: countdownManager.currentState?.azanSettings,
+                              activePrayer: effectivePrayer,
+                              sunriseActive: countdownManager.currentState?.sunrise != nil,
+                              ramadan: sky.ramadan != nil,
+                              columns: 6)
+                Spacer(minLength: 0)
+                if inRail { dockPanels } else { dock }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, line + 16)
+            .padding(.bottom, 8)
+            .frame(width: size.width, height: size.height, alignment: .top)
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
     }

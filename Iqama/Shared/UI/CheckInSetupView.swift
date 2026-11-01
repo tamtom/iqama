@@ -194,10 +194,18 @@ struct CheckInSetupView: View {
 
     // MARK: - Prayers
 
+    /// An iOS Toggle puts a wide switch next to its label, so three columns break the
+    /// prayer names ("Dhuh-r") on a phone. iOS uses one row for each prayer.
+    #if os(iOS)
+    private static let prayerColumns = 1
+    #else
+    private static let prayerColumns = 3
+    #endif
+
     private var prayersCard: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 10) {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3),
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: Self.prayerColumns),
                           alignment: .leading, spacing: 8) {
                     Toggle("Fajr", isOn: $nagFajr)
                     Toggle("Dhuhr", isOn: $nagZuhr)

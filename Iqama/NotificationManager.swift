@@ -176,7 +176,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         let minutes = AppSettings.nagIntervalMinutes
         let content = UNMutableNotificationContent()
         content.title = "Did you pray \(w.prayer.displayName)?"
-        content.body = "\(w.prayer.arabicName) — confirm to stop the reminders, or I'll check again in \(minutes) min."
+        content.body = "\u{200E}\(w.prayer.arabicName) — confirm to stop the reminders, or I'll check again in \(minutes) min."
         content.sound = .default
         content.interruptionLevel = .timeSensitive
         content.categoryIdentifier = CategoryID.didYouPray
@@ -289,7 +289,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         let content = UNMutableNotificationContent()
         content.title = "\(prayer.displayName) Azan"
         content.body = iqamaMinutes > 0
-            ? "\(prayer.arabicName) — iqama in \(iqamaMinutes) minute\(iqamaMinutes == 1 ? "" : "s")."
+            ? "\u{200E}\(prayer.arabicName) — iqama in \(iqamaMinutes) minute\(iqamaMinutes == 1 ? "" : "s")."
             : prayer.arabicName
         content.interruptionLevel = .timeSensitive
         #if os(iOS)
@@ -472,7 +472,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 guard askAt > now else { continue }
                 let content = UNMutableNotificationContent()
                 content.title = "Did you pray \(w.prayer.displayName)?"
-                content.body = "\(w.prayer.arabicName) — confirm to stop the reminders, or I'll check again in \(AppSettings.nagIntervalMinutes) min."
+                content.body = "\u{200E}\(w.prayer.arabicName) — confirm to stop the reminders, or I'll check again in \(AppSettings.nagIntervalMinutes) min."
                 content.sound = .default
                 content.interruptionLevel = .timeSensitive
                 content.categoryIdentifier = CategoryID.didYouPray
