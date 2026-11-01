@@ -4,3 +4,13 @@ signing/
 
 # Local archives and IPAs
 build/
+
+# App Store creatives: generated files (the JSON, the compose script, and the fonts stay in git)
+design/app-store/ref/
+design/app-store/captures/*/*.png
+design/app-store/screenshots/
+design/app-store/review_*.jpg
+design/app-store/motion/renders/preview-*/
+
+# macOS Finder files
+.DS_Store

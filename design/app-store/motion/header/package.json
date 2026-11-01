@@ -1,0 +1,8 @@
+{
+  "name": "header",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npx --yes hyperframes@0.8.196 check"
+  }
+}

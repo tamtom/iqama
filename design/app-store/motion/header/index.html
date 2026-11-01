@@ -1,0 +1,285 @@
+<!doctype html>
+<html
+  lang="en"
+  data-composition-variables='[
+    {"id":"lang","type":"string","label":"Language","default":"en"},
+    {"id":"cjk","type":"string","label":"CJK font family","default":""},
+    {"id":"wordmark","type":"string","label":"Wordmark","default":"AppName"},
+    {"id":"tagline","type":"string","label":"Tagline","default":"Tool one · Tool two · Tool three"},
+    {"id":"chip1","type":"string","label":"Tool 1","default":"Tool one"},
+    {"id":"chip2","type":"string","label":"Tool 2","default":"Tool two"},
+    {"id":"chip3","type":"string","label":"Tool 3","default":"Tool three"},
+    {"id":"chip4","type":"string","label":"Tool 4","default":"Tool four"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=3840, height=1646" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <!-- brand.css comes from scaffold_motion.py: the colours, the font, and the CJK fonts. -->
+    <link rel="stylesheet" href="assets/brand.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 3840px;
+        height: 1646px;
+        overflow: hidden;
+        background: var(--ground-2);
+      }
+      #root {
+        position: relative;
+        width: 3840px;
+        height: 1646px;
+        overflow: hidden;
+        font-family: var(--font), sans-serif;
+      }
+      .full {
+        position: absolute;
+        inset: 0;
+      }
+      /* The brand world: a bright core behind the hero, darker edges, and a darker top under the
+         status bar and the App Store buttons. */
+      #ground {
+        background:
+          linear-gradient(to bottom, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0) 30%),
+          radial-gradient(ellipse 1600px 1100px at 1650px 1000px, var(--ground-1) 0%, var(--ground-2) 45%, var(--ground-3) 100%);
+      }
+      #dots {
+        background-image: radial-gradient(circle, var(--dots) 2.6px, transparent 3px);
+        background-size: 46px 46px;
+        -webkit-mask-image: radial-gradient(ellipse 1700px 900px at 1650px 980px, #000 0%, transparent 100%);
+        mask-image: radial-gradient(ellipse 1700px 900px at 1650px 980px, #000 0%, transparent 100%);
+      }
+      #shadow {
+        position: absolute;
+        left: 940px;
+        top: 1300px;
+        width: 520px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.35);
+        filter: blur(18px);
+      }
+      /* The hero: a mascot, the app icon, or a product picture. Its bottom centre is (1200, 1340). */
+      #hero {
+        position: absolute;
+        left: 820px;
+        top: 580px;
+        width: 760px;
+        height: 760px;
+        object-fit: contain;
+        object-position: 50% 100%;
+      }
+      #wordmark {
+        position: absolute;
+        left: 1700px;
+        top: 700px;
+        color: var(--text);
+        font-size: 300px;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      #tagline {
+        position: absolute;
+        left: 1712px;
+        top: 1050px;
+        color: var(--text-2);
+        font-size: 100px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+      .item {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 340px;
+        border: 14px solid #fff;
+        border-radius: 14px;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+      }
+      .chip {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 190px;
+        padding: 0 64px 0 34px;
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        background: var(--chip-fill);
+        border-radius: 95px;
+        box-shadow: 0 26px 50px rgba(0, 0, 0, 0.35);
+        white-space: nowrap;
+        opacity: 0;
+      }
+      .chip img {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+      }
+      .chip span {
+        color: var(--chip-ink);
+        font-size: 92px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+      }
+      .streak {
+        position: absolute;
+        height: 26px;
+        border-radius: 13px;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55));
+        filter: blur(6px);
+        opacity: 0;
+      }
+      .spark {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 90px;
+        height: 90px;
+        background: var(--spark);
+        clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="3840" data-height="1646" data-motion-blur="on">
+      <div id="ground" class="full clip" data-start="0" data-duration="10" data-track-index="0"></div>
+      <div id="dots" class="full clip" data-start="0" data-duration="10" data-track-index="0" data-layout-ignore></div>
+      <div id="brand" class="full clip" data-start="0" data-duration="10" data-track-index="1">
+        <div id="wordmark">AppName</div>
+        <div id="tagline">Tool one · Tool two · Tool three</div>
+      </div>
+      <div id="fx" class="full clip" data-start="0" data-duration="10" data-track-index="2" data-layout-ignore>
+        <div id="streak-1" class="streak" style="left: -200px; top: 800px; width: 900px"></div>
+        <div id="streak-2" class="streak" style="left: -300px; top: 1230px; width: 1100px"></div>
+        <div id="streak-3" class="streak" style="left: 3100px; top: 760px; width: 900px; transform: scaleX(-1)"></div>
+        <div id="streak-4" class="streak" style="left: 3000px; top: 1200px; width: 1100px; transform: scaleX(-1)"></div>
+      </div>
+      <div id="stage" class="full clip" data-start="0" data-duration="10" data-track-index="3" data-layout-allow-overlap>
+        <div id="shadow"></div>
+        <img id="hero" src="assets/hero.png" alt="" />
+        <img id="item-1" class="item" src="assets/items/item1.png" alt="" />
+        <img id="item-2" class="item" src="assets/items/item2.png" alt="" />
+        <img id="item-3" class="item" src="assets/items/item3.png" alt="" />
+        <img id="item-4" class="item" src="assets/items/item4.png" alt="" />
+        <div id="spark-1" class="spark"></div>
+        <div id="spark-2" class="spark"></div>
+        <div id="spark-3" class="spark"></div>
+        <div id="spark-4" class="spark"></div>
+        <div id="spark-5" class="spark"></div>
+        <div id="spark-6" class="spark"></div>
+      </div>
+      <div id="tools" class="full clip" data-start="0" data-duration="10" data-track-index="4">
+        <div id="chip-1" class="chip"><img src="assets/chips/chip1.png" alt="" /><span id="chip-1-text">Tool one</span></div>
+        <div id="chip-2" class="chip"><img src="assets/chips/chip2.png" alt="" /><span id="chip-2-text">Tool two</span></div>
+        <div id="chip-3" class="chip"><img src="assets/chips/chip3.png" alt="" /><span id="chip-3-text">Tool three</span></div>
+        <div id="chip-4" class="chip"><img src="assets/chips/chip4.png" alt="" /><span id="chip-4-text">Tool four</span></div>
+      </div>
+    </div>
+
+    <script>
+      // Localized text from --variables. A CJK language puts a Noto font after the brand font, so
+      // Latin letters keep the brand font. Long text shrinks to fit its box.
+      const vars = window.__hyperframes?.getVariables?.() ?? {};
+      for (const [id, key] of [["wordmark", "wordmark"], ["tagline", "tagline"], ["chip-1-text", "chip1"],
+                               ["chip-2-text", "chip2"], ["chip-3-text", "chip3"], ["chip-4-text", "chip4"]]) {
+        if (vars[key]) document.getElementById(id).textContent = vars[key];
+      }
+      if (vars.lang) document.documentElement.lang = vars.lang;
+      if (vars.cjk) document.getElementById("root").style.fontFamily = `var(--font), "${vars.cjk}", sans-serif`;
+      const fit = (el, maxWidth) => {
+        el.dataset.size ??= getComputedStyle(el).fontSize;
+        el.style.fontSize = el.dataset.size;
+        const width = el.getBoundingClientRect().width;
+        if (width > maxWidth) el.style.fontSize = parseFloat(el.dataset.size) * maxWidth / width + "px";
+      };
+      const fitAll = () => {
+        // The iPhone shows only the centre 16:9 band of the 21:9 header: x 530 to 3310.
+        fit(document.getElementById("wordmark"), 1500);
+        fit(document.getElementById("tagline"), 1500);
+        // A chip starts at x 1780 or 1880; the text box is the chip width minus the icon and padding.
+        for (let i = 1; i <= 4; i++) fit(document.getElementById(`chip-${i}-text`), 1086);
+      };
+      fitAll();
+      document.fonts.ready.then(fitAll);
+
+      const tl = gsap.timeline({ paused: true });
+      // The hero bottom centre on the canvas, and the spot where the items fly in.
+      const HX = 1200, HY = 1340, CATCH = { x: 1200, y: 1050 };
+      const at = (x, y) => ({ x, y, xPercent: -50, yPercent: -50 });
+
+      // ---- Life: a slow breath (4 whole cycles in 10 s, so frame 0 = the last frame).
+      tl.fromTo("#hero", { scaleY: 1, scaleX: 1, transformOrigin: "50% 100%" },
+        { scaleY: 1.02, scaleX: 0.992, transformOrigin: "50% 100%", duration: 1.25, ease: "sine.inOut", yoyo: true, repeat: 7 }, 0);
+
+      // ---- The wordmark makes room for the action, and comes back before the loop ends.
+      tl.fromTo("#wordmark", { x: 0, opacity: 1 }, { x: 160, opacity: 0, duration: 0.3, ease: "power2.in" }, 0.92);
+      tl.fromTo("#tagline", { x: 0, opacity: 1 }, { x: 160, opacity: 0, duration: 0.3, ease: "power2.in" }, 0.96);
+      tl.to("#wordmark", { x: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, 7.15);
+      tl.to("#tagline", { x: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, 7.25);
+
+      // ---- The items whip in from both sides, hover, then fly into the hero.
+      const items = [
+        { id: "#item-1", from: [-500, 600], stage: [700, 790], rot0: -28, rot1: -9, t: 1.0 },
+        { id: "#item-2", from: [-500, 1500], stage: [680, 1200], rot0: 22, rot1: 7, t: 1.12 },
+        { id: "#item-3", from: [4300, 620], stage: [1720, 740], rot0: 24, rot1: 8, t: 1.06 },
+        { id: "#item-4", from: [4300, 1450], stage: [1740, 1190], rot0: -20, rot1: -6, t: 1.18 },
+      ];
+      items.forEach((p, i) => {
+        tl.fromTo(p.id, { ...at(...p.from), rotation: p.rot0, scale: 1, opacity: 1 },
+          { ...at(...p.stage), rotation: p.rot1, duration: 0.62, ease: "expo.out" }, p.t);
+        tl.to(p.id, { ...at(CATCH.x, CATCH.y), rotation: 0, scale: 0.14, duration: 0.34, ease: "power3.in" }, 2.08 + i * 0.07);
+        tl.to(p.id, { opacity: 0, duration: 0.06 }, 2.38 + i * 0.07);
+      });
+      [["#streak-1", 700], ["#streak-2", 900], ["#streak-3", -700], ["#streak-4", -900]].forEach(([s, dx], i) => {
+        tl.fromTo(s, { x: 0, opacity: 0 }, { x: dx, opacity: 1, duration: 0.3, ease: "power2.out" }, 0.98 + i * 0.05);
+        tl.to(s, { x: dx * 1.6, opacity: 0, duration: 0.3, ease: "power2.in" }, 1.28 + i * 0.05);
+      });
+
+      // ---- The catch: a jump of joy and a clean landing. GSAP keeps y, rotation, and the breath
+      // scale as separate parts of one transform, so they do not cancel each other.
+      tl.fromTo("#shadow", { scaleX: 1, opacity: 1 }, { scaleX: 0.8, opacity: 0.6, duration: 0.24, ease: "power2.out" }, 2.42);
+      tl.to("#shadow", { scaleX: 1, opacity: 1, duration: 0.26, ease: "power2.in" }, 2.66);
+      tl.to("#hero", { y: -90, rotation: -3, transformOrigin: "50% 100%", duration: 0.24, ease: "power2.out" }, 2.42);
+      tl.to("#hero", { y: 0, rotation: 0, transformOrigin: "50% 100%", duration: 0.26, ease: "power2.in" }, 2.66);
+
+      // ---- Sparkles at the catch.
+      [[850, 650, 0], [1550, 610, 0.04], [790, 1070, 0.08], [1610, 1020, 0.02], [1010, 530, 0.1], [1400, 510, 0.06]]
+        .forEach(([x, y, d], i) => {
+          const s = `#spark-${i + 1}`;
+          tl.fromTo(s, { ...at(x, y), scale: 0, rotation: 0, opacity: 1 },
+            { scale: 1.3, rotation: 90, duration: 0.3, ease: "back.out(2)" }, 2.55 + d);
+          tl.to(s, { scale: 0, rotation: 150, opacity: 0, duration: 0.3, ease: "power2.in" }, 2.95 + d);
+        });
+
+      // ---- A happy wiggle while the tool cards show.
+      for (let k = 0; k < 3; k++) {
+        tl.to("#hero", { rotation: 4, transformOrigin: "50% 100%", duration: 0.25, ease: "sine.inOut" }, 4.2 + k * 0.6);
+        tl.to("#hero", { rotation: -4, transformOrigin: "50% 100%", duration: 0.3, ease: "sine.inOut" }, 4.45 + k * 0.6);
+      }
+      tl.to("#hero", { rotation: 0, transformOrigin: "50% 100%", duration: 0.3, ease: "sine.inOut" }, 6.0);
+
+      // ---- The tool cards take the place of the wordmark.
+      [[1780, 690, -2], [1880, 915, 1.5], [1780, 1140, -1.5], [1880, 1365, 2]].forEach(([x, y, r], i) => {
+        const c = `#chip-${i + 1}`;
+        tl.fromTo(c, { x, y, yPercent: -50, transformOrigin: "0% 50%", scale: 0.6, rotation: r - 6, opacity: 0 },
+          { scale: 1, rotation: r, opacity: 1, duration: 0.5, ease: "back.out(1.7)" }, 3.3 + i * 0.12);
+        tl.to(c, { scale: 0.85, opacity: 0, duration: 0.24, ease: "power3.in" }, 6.85 + (3 - i) * 0.07);
+      });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

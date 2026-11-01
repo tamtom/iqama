@@ -1,0 +1,61 @@
+{
+ "01_closed": {
+  "capture": "00_closed",
+  "height": 1560,
+  "y": 560,
+  "text": "top",
+  "icon": true,
+  "style": {
+   "canvas": [
+    1398,
+    2034
+   ],
+   "headline": {
+    "size": 104,
+    "margin_x": 90,
+    "top": 250,
+    "top_with_icon": 250
+   },
+   "icon": {
+    "size": 130,
+    "top": 70
+   }
+  }
+ },
+ "02_open": {
+  "capture": "01_sky",
+  "height": 1500,
+  "y": 495,
+  "text": "top",
+  "icon": false,
+  "style": {
+   "headline": {
+    "top": 150
+   }
+  }
+ },
+ "03_tabletop": {
+  "capture": "05_tabletop",
+  "height": 1500,
+  "y": 495,
+  "text": "top"
+ },
+ "04_ramadan": {
+  "capture": "03_ramadan",
+  "height": 1500,
+  "y": 495,
+  "text": "top"
+ },
+ "05_fajr": {
+  "capture": "04_night",
+  "height": 1500,
+  "y": 495,
+  "text": "top"
+ },
+ "06_sea": {
+  "capture": "02_sea",
+  "height": 1500,
+  "y": 495,
+  "text": "top"
+ }
+}

@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "historyId": "21c15a55-54e9-43d5-a1e8-9b2ce80a56da",
+  "currentRevision": null,
+  "pendingChanges": false,
+  "files": {
+    "assets/brand.css": {
+      "hash": "9fe3dba4ac3d1c39b4a4af8499db62ba486396db3a4de073e33833eeabdc279d",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/9f/9fe3dba4ac3d1c39b4a4af8499db62ba486396db3a4de073e33833eeabdc279d"
+    },
+    "assets/chips/chip1.png": {
+      "hash": "0076ab7ba060cf0d78ec1193c9b75a539d12c6f81506740aef17c4dd01dbd6a2",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/00/0076ab7ba060cf0d78ec1193c9b75a539d12c6f81506740aef17c4dd01dbd6a2"
+    },
+    "assets/chips/chip2.png": {
+      "hash": "f06bdfbe056c0767b310ad0d4c19a4b4646ba2f142da3fff770ea60dc887a266",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/f0/f06bdfbe056c0767b310ad0d4c19a4b4646ba2f142da3fff770ea60dc887a266"
+    },
+    "assets/chips/chip3.png": {
+      "hash": "0d1decd5f3ef626d3b6e6fbf96de5a14684b0efb50775d982b3a7d13e6166cc6",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/0d/0d1decd5f3ef626d3b6e6fbf96de5a14684b0efb50775d982b3a7d13e6166cc6"
+    },
+    "assets/chips/chip4.png": {
+      "hash": "e2799322f10a03376377d55c94d51cba4be69ac684d1489ffcf611135fd53d92",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/e2/e2799322f10a03376377d55c94d51cba4be69ac684d1489ffcf611135fd53d92"
+    },
+    "assets/fonts/Arabic.ttf": {
+      "hash": "268bba7e1e8f3b14d798b3fb0e40ebaa3fc39308c9ac0020e2faf6df181cc30e",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/26/268bba7e1e8f3b14d798b3fb0e40ebaa3fc39308c9ac0020e2faf6df181cc30e"
+    },
+    "assets/fonts/Brand.ttf": {
+      "hash": "f50f61f2ba738e239442d40bf1069adb195c224b6a5a73a581fc2f3ed62a9f63",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/f5/f50f61f2ba738e239442d40bf1069adb195c224b6a5a73a581fc2f3ed62a9f63"
+    },
+    "assets/hero.png": {
+      "hash": "00fe884d23fddc0f11f154cd6918edf53c13ccb814cd8d96e08522a18cc97aab",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/00/00fe884d23fddc0f11f154cd6918edf53c13ccb814cd8d96e08522a18cc97aab"
+    },
+    "assets/items/item1.png": {
+      "hash": "130240043b8998dc6ba14677af79e146191615b359da881dc81ea563457aaf18",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/13/130240043b8998dc6ba14677af79e146191615b359da881dc81ea563457aaf18"
+    },
+    "assets/items/item2.png": {
+      "hash": "38004ea0df2f8bdbb4adf4dd0bb0405ede5733a16003b36f836ff92dbef77ac1",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/38/38004ea0df2f8bdbb4adf4dd0bb0405ede5733a16003b36f836ff92dbef77ac1"
+    },
+    "assets/items/item3.png": {
+      "hash": "69793f979acf2fc9aa5476c29240602ced0e0e2d6e3bc6bcd7614c1a6ae415c1",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/69/69793f979acf2fc9aa5476c29240602ced0e0e2d6e3bc6bcd7614c1a6ae415c1"
+    },
+    "assets/items/item4.png": {
+      "hash": "28ceb7a489fdee8297f522094b7ac3e93cfedf1840fd0d7fe048b04f53f5b9f0",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/28/28ceb7a489fdee8297f522094b7ac3e93cfedf1840fd0d7fe048b04f53f5b9f0"
+    },
+    "index.html": {
+      "hash": "2d81a922e25d5b1f5bf4761dc0baa3d2c9ba241416730aae0e7283222b12c276",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/2d/2d81a922e25d5b1f5bf4761dc0baa3d2c9ba241416730aae0e7283222b12c276"
+    },
+    "package.json": {
+      "hash": "ec0acca9165ed1495b3db0edfad17edfe4aa18b12956548de52067bd94619480",
+      "content": "/Users/omartamimi/.cache/hyperframes/history/21c15a55-54e9-43d5-a1e8-9b2ce80a56da/blobs/ec/ec0acca9165ed1495b3db0edfad17edfe4aa18b12956548de52067bd94619480"
+    }
+  },
+  "revisions": {},
+  "checks": {
+    "latest": {
+      "revision": null,
+      "id": "0817e738-49e5-4d70-b72f-28f73db5e638"
+    },
+    "revisions": {},
+    "unversioned": [
+      {
+        "id": "0817e738-49e5-4d70-b72f-28f73db5e638",
+        "scope": "project",
+        "report": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/.hyperframes/artifacts/checks/0817e738-49e5-4d70-b72f-28f73db5e638.json",
+        "metadata": {
+          "ok": true,
+          "browserSkipped": false,
+          "options": {
+            "samples": 9,
+            "atTransitions": false,
+            "maxIssues": 80,
+            "collapseStatic": true,
+            "tolerance": 2,
+            "timeout": 3000,
+            "contrast": true,
+            "strict": false,
+            "snapshots": false,
+            "browserGpuMode": "auto"
+          }
+        },
+        "createdAt": 1793042311480,
+        "contentHash": "c315486ae2b7a61d6c0fde0d9b5b2752e9ff96b70e42fb078ea478ff4d6b1e38",
+        "revision": null,
+        "inputFingerprint": "0ae011c11dbb5349c1e733cce52990684ea6332cdcadcde67f941061f17cfc7e",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      }
+    ]
+  },
+  "snapshots": {
+    "latest": null,
+    "revisions": {},
+    "unversioned": []
+  },
+  "renders": {
+    "latest": {
+      "id": "1b52b4bc-bd6e-4a14-a2a2-e76f8127d754",
+      "completedAt": 1793042667592,
+      "output": "/Users/omartamimi/Documents/iqama/design/app-store/motion/renders/header-ar-SA.mp4",
+      "status": "completed",
+      "revision": null
+    },
+    "retainedRevisions": []
+  },
+  "pendingArtifactCleanup": []
+}

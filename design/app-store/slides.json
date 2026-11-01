@@ -1,0 +1,154 @@
+{
+ "01_hero": {
+  "capture": "01_maghrib",
+  "height": 1820,
+  "y": 1080,
+  "text": "top",
+  "icon": true,
+  "style": {
+   "headline": {
+    "align": "center",
+    "size": 150,
+    "line_height": 1.08,
+    "top": 420
+   }
+  },
+  "chips": [
+   {
+    "icon": "icons/speaker.wave.2.fill.png",
+    "at": [
+     270,
+     1330
+    ],
+    "rot": -4
+   },
+   {
+    "icon": "icons/timer.png",
+    "at": [
+     1010,
+     1450
+    ],
+    "rot": 3
+   },
+   {
+    "icon": "icons/moon.stars.fill.png",
+    "at": [
+     280,
+     2160
+    ],
+    "rot": -3
+   },
+   {
+    "icon": "icons/bell.badge.fill.png",
+    "at": [
+     1010,
+     2470
+    ],
+    "rot": 3
+   }
+  ]
+ },
+ "02_athan": {
+  "capture": "02_voices",
+  "height": 2200,
+  "y": 660,
+  "text": "top",
+  "callouts": [
+   {
+    "ref": "voice_list",
+    "box": [
+     452,
+     432,
+     1200,
+     1280
+    ],
+    "scale": 0.98,
+    "at": [
+     820,
+     1560
+    ]
+   }
+  ]
+ },
+ "03_iqama": {
+  "capture": "03_iqama",
+  "height": 2200,
+  "y": 660,
+  "text": "top",
+  "discs": [
+   {
+    "at": [
+     1000,
+     2020
+    ],
+    "r": 300
+   }
+  ]
+ },
+ "04_widgets": {
+  "capture": "04_widgets",
+  "height": 2200,
+  "y": 660,
+  "text": "top"
+ },
+ "05_ramadan": {
+  "capture": "05_ramadan",
+  "height": 2200,
+  "y": 660,
+  "text": "top",
+  "callouts": [
+   {
+    "ref": "fasting_card",
+    "box": [
+     152,
+     1040,
+     1168,
+     1268
+    ],
+    "scale": 1.04
+   }
+  ]
+ },
+ "06_checkin": {
+  "capture": "06_checkin",
+  "height": 2200,
+  "y": 660,
+  "text": "top",
+  "callouts": [
+   {
+    "ref": "checkin_banner",
+    "box": [
+     29,
+     179,
+     1291,
+     437
+    ],
+    "scale": 0.9
+   }
+  ]
+ },
+ "07_sea": {
+  "capture": "07_sea",
+  "height": 2200,
+  "y": 660,
+  "text": "top"
+ },
+ "08_offsets": {
+  "capture": "08_offsets",
+  "height": 2200,
+  "y": 660,
+  "text": "top",
+  "callouts": [
+   {
+    "ref": "friday_row",
+    "box": [
+     64,
+     1608,
+     1260,
+     1760
+    ],
+    "scale": 0.98
+   }
+  ]
+ }
+}

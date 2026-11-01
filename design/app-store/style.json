@@ -1,0 +1,155 @@
+{
+  "name": "Iqama: Rise-style dusk gradient, layered hills, bold keyword in regular white text",
+  "background": {
+    "stops": [
+      [
+        0,
+        "#221C3A"
+      ],
+      [
+        0.16,
+        "#35206A"
+      ],
+      [
+        0.36,
+        "#6324D8"
+      ],
+      [
+        0.5,
+        "#8A30C8"
+      ],
+      [
+        0.62,
+        "#BC4A98"
+      ],
+      [
+        0.73,
+        "#E5733F"
+      ],
+      [
+        0.8,
+        "#EF8A3C"
+      ]
+    ],
+    "glow": null,
+    "dots": null,
+    "grain": 4,
+    "hills": [
+      {
+        "base": 0.755,
+        "colors": [
+          "#4B2A88",
+          "#2B1658"
+        ],
+        "waves": [
+          [
+            1.1,
+            0.15,
+            46
+          ],
+          [
+            2.6,
+            0.4,
+            16
+          ]
+        ]
+      },
+      {
+        "base": 0.825,
+        "colors": [
+          "#2E1762",
+          "#170A35"
+        ],
+        "waves": [
+          [
+            0.85,
+            0.62,
+            58
+          ],
+          [
+            2.2,
+            0.25,
+            18
+          ]
+        ]
+      }
+    ]
+  },
+  "font": {
+    "path": "fonts/WorkSans.ttf",
+    "weight": 400,
+    "rtl": {
+      "ar": "fonts/ReadexPro.ttf"
+    }
+  },
+  "headline": {
+    "size": 112,
+    "line_height": 1.16,
+    "margin_x": 130,
+    "align": "left",
+    "colors": [
+      "#FFFFFF"
+    ],
+    "accent": "bold",
+    "regular_weight": 400,
+    "bold_weight": 700,
+    "top": 200
+  },
+  "kicker": {
+    "size": 50,
+    "weight": 600,
+    "color": "#F39343",
+    "tracking": 3,
+    "gap": 110,
+    "rtl_dy": 30
+  },
+  "phone": {
+    "default": "flat",
+    "shadow": 0.5,
+    "flat": {
+      "body": "#0B0B0D",
+      "rim": "#2E2E33",
+      "bezel": 0.026,
+      "radius": 0.15,
+      "island": true
+    }
+  },
+  "callout": {
+    "fill": "#1C1C21",
+    "radius": 30,
+    "pad": 0,
+    "shadow_alpha": 190
+  },
+  "chip": {
+    "fill": "#1F1338",
+    "ink": "#FFFFFF",
+    "font_size": 54,
+    "height": 148,
+    "icon": 78,
+    "shadow_alpha": 170
+  },
+  "disc": {
+    "fill": "#1C1C21",
+    "ink": "#FFFFFF",
+    "big_weight": 400
+  },
+  "icon": {
+    "path": "../../Iqama/Assets.xcassets/AppIcon.appiconset/AppIcon-iOS-1024.png",
+    "size": 200,
+    "top": 150
+  },
+  "fade": false,
+  "motion": {
+    "ground": [
+      "#8A30C8",
+      "#4A1F9E",
+      "#1C1636"
+    ],
+    "dots": "#FFFFFF",
+    "text": "#FFFFFF",
+    "text_2": "#E7DCFF",
+    "chip_fill": "#1F1338",
+    "chip_ink": "#FFFFFF",
+    "spark": "#F39343"
+  }
+}

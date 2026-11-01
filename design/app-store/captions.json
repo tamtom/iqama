@@ -1,0 +1,131 @@
+{
+ "en-US": {
+  "01_hero": {
+   "kicker": "PRAYER TIMES · ATHAN · IQAMA",
+   "lines": [
+    "**Prayer times**",
+    "**that keep you**",
+    "**on time**"
+   ],
+   "chips": [
+    "Athan",
+    "Iqama countdown",
+    "Ramadan",
+    "Prayer reminder"
+   ]
+  },
+  "02_athan": {
+   "lines": [
+    "Hear the **Athan**",
+    "in 12 voices"
+   ]
+  },
+  "03_iqama": {
+   "lines": [
+    "Never miss",
+    "the **iqama**"
+   ],
+   "discs": [
+    [
+     "11:54",
+     "",
+     "to Asr iqama"
+    ]
+   ]
+  },
+  "04_widgets": {
+   "lines": [
+    "**Prayer widgets**",
+    "on your Home Screen"
+   ]
+  },
+  "05_ramadan": {
+   "lines": [
+    "**Ramadan** iftar",
+    "and suhoor times"
+   ]
+  },
+  "06_checkin": {
+   "lines": [
+    "A gentle",
+    "**prayer reminder**"
+   ]
+  },
+  "07_sea": {
+   "lines": [
+    "**Salah times**",
+    "at a glance"
+   ]
+  },
+  "08_offsets": {
+   "lines": [
+    "Your mosque's",
+    "**iqama times**"
+   ]
+  }
+ },
+ "ar-SA": {
+  "01_hero": {
+   "kicker": "مواقيت الصلاة · الأذان · الإقامة",
+   "lines": [
+    "**أوقات الصلاة**",
+    "**لتصلّي في وقتها**"
+   ],
+   "chips": [
+    "الأذان",
+    "عدّاد الإقامة",
+    "رمضان",
+    "تذكير الصلاة"
+   ]
+  },
+  "02_athan": {
+   "lines": [
+    "استمع إلى **الأذان**",
+    "واختر من 12 صوتًا"
+   ]
+  },
+  "03_iqama": {
+   "lines": [
+    "لا تفوّتك",
+    "**الإقامة**"
+   ],
+   "discs": [
+    [
+     "11:54",
+     "",
+     "لإقامة العصر"
+    ]
+   ]
+  },
+  "04_widgets": {
+   "lines": [
+    "**ويدجت الصلاة**",
+    "على الشاشة الرئيسية"
+   ]
+  },
+  "05_ramadan": {
+   "lines": [
+    "**إمساكية** رمضان",
+    "الإفطار والسحور"
+   ]
+  },
+  "06_checkin": {
+   "lines": [
+    "**تذكير** لطيف",
+    "بالصلاة"
+   ]
+  },
+  "07_sea": {
+   "lines": [
+    "**مواقيت الصلاة**",
+    "بنظرة واحدة"
+   ]
+  },
+  "08_offsets": {
+   "lines": [
+    "**أوقات الإقامة**",
+    "في مسجدك"
+   ]
+  }
+ }
+}

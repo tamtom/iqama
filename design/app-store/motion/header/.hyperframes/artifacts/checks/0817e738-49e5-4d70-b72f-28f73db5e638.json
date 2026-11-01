@@ -1,0 +1,503 @@
+{
+  "ok": true,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 13,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 2.42s and 2.66s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 2.66s and 2.92s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 4.20s and 4.45s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 4.45s and 4.75s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 4.80s and 5.05s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 5.05s and 5.35s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 5.40s and 5.65s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 5.65s and 5.95s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "overlapping_gsap_tweens",
+        "severity": "warning",
+        "message": "GSAP tweens overlap on \"#hero\" for transformOrigin between 6.00s and 6.30s.",
+        "selector": "#hero",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Shorten the earlier tween, move the later tween, or add `overwrite: \"auto\"`."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<div id=\"brand\"> is a timeline element that contains nested <div id=\"wordmark\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#brand",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <div id=\"brand\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<div id=\"fx\"> is a timeline element that contains nested <div id=\"streak-1\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#fx",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <div id=\"fx\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<div id=\"stage\"> is a timeline element that contains nested <div id=\"shadow\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#stage",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <div id=\"stage\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<div id=\"tools\"> is a timeline element that contains nested <div id=\"chip-1\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#tools",
+        "dataAttributes": {},
+        "sourceFile": "/Users/omartamimi/Documents/iqama/design/app-store/motion/header/index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <div id=\"tools\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      }
+    ],
+    "filesScanned": 1
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 5,
+    "findings": [
+      {
+        "code": "escaped_container",
+        "severity": "info",
+        "time": 0.556,
+        "selector": "#item-1",
+        "message": "Positioned element renders far outside its offset parent — its coordinates were likely computed in a different frame (canvas/viewport pixels).",
+        "rect": {
+          "left": -750.68,
+          "top": 359.05,
+          "right": -249.32,
+          "bottom": 840.95,
+          "width": 501.36,
+          "height": 481.91
+        },
+        "containerSelector": "#stage",
+        "text": "",
+        "fixHint": "Compute left/top in the offset parent's frame (subtract its rect), or mark intentional placement with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 1646,
+          "width": 3840,
+          "height": 1646
+        },
+        "dataAttributes": {
+          "data-hf-render-id": "item-1",
+          "data-hf-authored-opacity": ""
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": -750.68,
+          "y": 359.05,
+          "width": 501.36,
+          "height": 481.91
+        },
+        "firstSeen": 0.556,
+        "lastSeen": 0.556,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          0.556
+        ]
+      },
+      {
+        "code": "escaped_container",
+        "severity": "info",
+        "time": 0.556,
+        "selector": "#item-2",
+        "message": "Positioned element renders far outside its offset parent — its coordinates were likely computed in a different frame (canvas/viewport pixels).",
+        "rect": {
+          "left": -721.3,
+          "top": 1278.7,
+          "right": -278.7,
+          "bottom": 1721.3,
+          "width": 442.61,
+          "height": 442.61
+        },
+        "containerSelector": "#stage",
+        "text": "",
+        "fixHint": "Compute left/top in the offset parent's frame (subtract its rect), or mark intentional placement with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 1646,
+          "width": 3840,
+          "height": 1646
+        },
+        "dataAttributes": {
+          "data-hf-render-id": "item-2",
+          "data-hf-authored-opacity": ""
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": -721.3,
+          "y": 1278.7,
+          "width": 442.61,
+          "height": 442.61
+        },
+        "firstSeen": 0.556,
+        "lastSeen": 0.556,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          0.556
+        ]
+      },
+      {
+        "code": "escaped_container",
+        "severity": "info",
+        "time": 0.556,
+        "selector": "#item-4",
+        "message": "Positioned element renders far outside its offset parent — its coordinates were likely computed in a different frame (canvas/viewport pixels).",
+        "rect": {
+          "left": 4093.25,
+          "top": 1236.16,
+          "right": 4506.75,
+          "bottom": 1663.84,
+          "width": 413.51,
+          "height": 427.68
+        },
+        "containerSelector": "#stage",
+        "text": "",
+        "fixHint": "Compute left/top in the offset parent's frame (subtract its rect), or mark intentional placement with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 3840,
+          "bottom": 1646,
+          "width": 3840,
+          "height": 1646
+        },
+        "dataAttributes": {
+          "data-hf-render-id": "item-4",
+          "data-hf-authored-opacity": ""
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 4093.25,
+          "y": 1236.16,
+          "width": 413.51,
+          "height": 427.68
+        },
+        "firstSeen": 0.556,
+        "lastSeen": 0.556,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          0.556
+        ]
+      },
+      {
+        "code": "text_occluded",
+        "severity": "info",
+        "time": 7.222,
+        "selector": "#wordmark",
+        "message": "Text is hidden beneath an opaque element.",
+        "rect": {
+          "left": 1790.22,
+          "top": 674,
+          "right": 3150.4,
+          "bottom": 1026,
+          "width": 1360.17,
+          "height": 352
+        },
+        "containerSelector": "#chip-1",
+        "text": "AppName",
+        "fixHint": "Give the text its own zone, raise its stacking order above the covering element, or mark intentional layering with data-layout-allow-occlusion.",
+        "coveredFraction": 0.15,
+        "dataAttributes": {
+          "data-size": "300px"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1790.22,
+          "y": 674,
+          "width": 1360.17,
+          "height": 352
+        },
+        "firstSeen": 7.222,
+        "lastSeen": 7.222,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          7.222
+        ]
+      },
+      {
+        "code": "content_overlap",
+        "severity": "info",
+        "time": 7.222,
+        "selector": "#wordmark",
+        "message": "Two text blocks overlap and may render unreadable.",
+        "rect": {
+          "left": 1790.22,
+          "top": 674,
+          "right": 3150.4,
+          "bottom": 1026,
+          "width": 1360.18,
+          "height": 352
+        },
+        "containerSelector": "#chip-2-text",
+        "text": "AppName",
+        "fixHint": "Give each block its own zone, or put data-layout-allow-overlap on the text or on a container inside the scene. A marker on the scene root does not apply.",
+        "dataAttributes": {
+          "data-size": "300px"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1790.22,
+          "y": 674,
+          "width": 1360.18,
+          "height": 352
+        },
+        "firstSeen": 7.222,
+        "lastSeen": 7.222,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          7.222
+        ]
+      }
+    ],
+    "duration": 10,
+    "samples": [
+      0.556,
+      1.667,
+      2.778,
+      3.889,
+      5,
+      6.111,
+      7.222,
+      8.333,
+      9.444
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 5,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      0.556,
+      2.778,
+      5,
+      7.222,
+      9.444
+    ],
+    "checked": 11,
+    "passed": 11
+  },
+  "craft": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "step": 0.125,
+    "samples": 80
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  }
+}

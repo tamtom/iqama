@@ -1,0 +1,14 @@
+@font-face { font-family: "Brand"; src: url("fonts/Brand.ttf"); font-weight: 100 900; }
+:root {
+  --font: "Brand";
+  --ground-1: #8A30C8;
+  --ground-2: #4A1F9E;
+  --ground-3: #1C1636;
+  --dots: #FFFFFF;
+  --text: #FFFFFF;
+  --text-2: #E7DCFF;
+  --chip-fill: #1F1338;
+  --chip-ink: #FFFFFF;
+  --spark: #F39343;
+}
+@font-face { font-family: "ArabicFont"; src: url("fonts/Arabic.ttf"); font-weight: 160 700; }

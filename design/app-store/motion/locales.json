@@ -1,0 +1,44 @@
+{
+  "en-US": {
+    "header": {
+      "wordmark": "Iqama",
+      "tagline": "Prayer times · Athan · Iqama",
+      "chip1": "Athan",
+      "chip2": "Iqama countdown",
+      "chip3": "Ramadan",
+      "chip4": "Widgets"
+    },
+    "search": {
+      "headline": "Prayer times with Athan",
+      "tool1": "Athan in 12 voices",
+      "tool2": "Iqama countdown",
+      "tool3": "Prayer reminder",
+      "tool4": "Ramadan times",
+      "tool5": "Widgets",
+      "tool6": "Live Activity",
+      "more": "Free · No ads · No account"
+    }
+  },
+  "ar-SA": {
+    "header": {
+      "wordmark": "إقامة",
+      "tagline": "أوقات الصلاة · الأذان · الإقامة",
+      "chip1": "الأذان",
+      "chip2": "عدّاد الإقامة",
+      "chip3": "رمضان",
+      "chip4": "ويدجت",
+      "cjk": "ArabicFont"
+    },
+    "search": {
+      "headline": "أوقات الصلاة مع الأذان",
+      "tool1": "الأذان بـ12 صوتًا",
+      "tool2": "عدّاد الإقامة",
+      "tool3": "تذكير الصلاة",
+      "tool4": "إمساكية رمضان",
+      "tool5": "ويدجت الصلاة",
+      "tool6": "النشاط المباشر",
+      "more": "مجاني · بلا إعلانات · بلا حساب",
+      "cjk": "ArabicFont"
+    }
+  }
+}

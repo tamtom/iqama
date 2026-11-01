@@ -1,0 +1,168 @@
+<!doctype html>
+<html
+  lang="en"
+  data-composition-variables='[
+    {"id":"lang","type":"string","label":"Language","default":"en"},
+    {"id":"cjk","type":"string","label":"CJK font family","default":""},
+    {"id":"headline","type":"string","label":"Headline","default":"Every tool in one app"},
+    {"id":"tool1","type":"string","label":"Tool 1","default":"Tool one"},
+    {"id":"tool2","type":"string","label":"Tool 2","default":"Tool two"},
+    {"id":"tool3","type":"string","label":"Tool 3","default":"Tool three"},
+    {"id":"tool4","type":"string","label":"Tool 4","default":"Tool four"},
+    {"id":"tool5","type":"string","label":"Tool 5","default":"Tool five"},
+    {"id":"tool6","type":"string","label":"Tool 6","default":"Tool six"},
+    {"id":"more","type":"string","label":"More tools","default":"+10 more tools"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=3840, height=2560" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="assets/brand.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 3840px;
+        height: 2560px;
+        overflow: hidden;
+        background: var(--ground-2);
+      }
+      #root {
+        position: relative;
+        width: 3840px;
+        height: 2560px;
+        overflow: hidden;
+        font-family: var(--font), sans-serif;
+      }
+      .full {
+        position: absolute;
+        inset: 0;
+      }
+      #ground {
+        background: radial-gradient(ellipse 2400px 1800px at 1920px 1250px, var(--ground-1) 0%, var(--ground-2) 45%, var(--ground-3) 100%);
+      }
+      #dots {
+        background-image: radial-gradient(circle, var(--dots) 2.6px, transparent 3px);
+        background-size: 46px 46px;
+        -webkit-mask-image: radial-gradient(ellipse 2200px 1500px at 1920px 1250px, #000 0%, transparent 100%);
+        mask-image: radial-gradient(ellipse 2200px 1500px at 1920px 1250px, #000 0%, transparent 100%);
+      }
+      #headline {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 150px;
+        color: var(--text);
+        font-size: 200px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+      }
+      /* Six large tiles, 3 x 2. The search card is about 370 pt wide on the iPhone, so the labels
+         are large: at that size a 132 px label is about 13 pt. */
+      #grid {
+        position: absolute;
+        left: 230px;
+        top: 470px;
+        width: 3380px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 90px;
+      }
+      .tile {
+        height: 790px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 56px;
+        background: var(--chip-fill);
+        border-radius: 96px;
+        box-shadow: 0 34px 70px rgba(0, 0, 0, 0.35);
+      }
+      .tile .icon {
+        width: 340px;
+        height: 340px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .tile img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .tile span {
+        color: var(--chip-ink);
+        font-size: 132px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      #more {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 2290px;
+        color: var(--text-2);
+        font-size: 120px;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The App Store search results asset: 3:2, 3840x2560, one still. The search result already
+         shows the app icon next to it, so this asset shows the tools, not the brand character. -->
+    <div id="root" data-composition-id="main" data-start="0" data-duration="1" data-width="3840" data-height="2560">
+      <div id="ground" class="full clip" data-start="0" data-duration="1" data-track-index="0"></div>
+      <div id="dots" class="full clip" data-start="0" data-duration="1" data-track-index="0" data-layout-ignore></div>
+      <div id="content" class="full clip" data-start="0" data-duration="1" data-track-index="1">
+        <div id="headline">Every tool in one app</div>
+        <div id="grid">
+          <div class="tile"><div class="icon"><img src="assets/tools/tool1.png" alt="" /></div><span id="tool1">Tool one</span></div>
+          <div class="tile"><div class="icon"><img src="assets/tools/tool2.png" alt="" /></div><span id="tool2">Tool two</span></div>
+          <div class="tile"><div class="icon"><img src="assets/tools/tool3.png" alt="" /></div><span id="tool3">Tool three</span></div>
+          <div class="tile"><div class="icon"><img src="assets/tools/tool4.png" alt="" /></div><span id="tool4">Tool four</span></div>
+          <div class="tile"><div class="icon"><img src="assets/tools/tool5.png" alt="" /></div><span id="tool5">Tool five</span></div>
+          <div class="tile"><div class="icon"><img src="assets/tools/tool6.png" alt="" /></div><span id="tool6">Tool six</span></div>
+        </div>
+        <div id="more">+10 more tools</div>
+      </div>
+    </div>
+    <script>
+      const vars = window.__hyperframes?.getVariables?.() ?? {};
+      for (const key of ["headline", "more", "tool1", "tool2", "tool3", "tool4", "tool5", "tool6"]) {
+        if (vars[key]) document.getElementById(key).textContent = vars[key];
+      }
+      if (vars.lang) document.documentElement.lang = vars.lang;
+      if (vars.cjk) document.getElementById("root").style.fontFamily = `var(--font), "${vars.cjk}", sans-serif`;
+      const fit = (el, maxWidth) => {
+        el.dataset.size ??= getComputedStyle(el).fontSize;
+        el.style.fontSize = el.dataset.size;
+        const width = el.getBoundingClientRect().width;
+        if (width > maxWidth) el.style.fontSize = parseFloat(el.dataset.size) * maxWidth / width + "px";
+      };
+      const fitAll = () => {
+        fit(document.getElementById("headline"), 3380);
+        fit(document.getElementById("more"), 3380);
+        for (let i = 1; i <= 6; i++) fit(document.getElementById(`tool${i}`), 960);  // a tile is about 1067 px wide
+      };
+      fitAll();
+      document.fonts.ready.then(fitAll);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

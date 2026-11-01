@@ -1,59 +1,121 @@
 # Iqama — App Store listing (iPhone)
 
-Draft metadata for `com.itdeveapps.iqama`. Edit anything before we push it via `asc`.
+The live metadata for `com.itdeveapps.iqama` (App ID `6782582509`), version 1.5.1.
+This file is the source copy. Update it when you change the listing in App Store Connect.
 
 ## Identity
-- **App Name** (≤30): `Iqama: Prayer Times & Azan`
-- **Subtitle** (≤30): `Iqama countdown & reminders`
-- **Primary category:** Lifestyle
-- **Secondary category:** Reference
-- **Age rating:** 4+ (no objectionable content)
-- **Bundle ID:** `com.itdeveapps.iqama`
-- **Privacy policy URL:** _(host `docs/privacy-policy.html` and paste the URL)_
-- **Support URL:** _(needed — e.g. the GitHub repo, or a contact page)_
+- **Primary category:** Lifestyle. **Secondary category:** Reference.
+- **Age rating:** all answers "None" (4+).
+- **Content rights:** uses third-party content (the Adhan recordings and the Aladhan data).
+- **Price:** Free. **Availability:** all territories except China mainland (it needs an ICP filing).
+- **Privacy policy URL:** https://tamtom.github.io/iqama/privacy-policy.html
+- **Support URL:** https://tamtom.github.io/iqama/support.html
+- **Copyright:** 2026 Omar Altamimi
 
-## Promotional text (≤170, updatable anytime)
-> Never miss a prayer. Iqama counts down to azan and iqama, holds you to it with a “did you pray?” check-in, and lives on your Lock Screen and home screen.
+## Keyword research (Astro, 2026-10-26)
+Popularity / difficulty. "prayer time(s)" has the highest volume for the search intent in all three stores.
 
-## Description (≤4000)
-Iqama keeps the next prayer and iqama one glance away — a calm, accurate countdown with reminders that actually follow up.
+| Keyword | US | UAE | Saudi |
+|---|---|---|---|
+| prayer time(s) | 54 / 60 | 57 / 62 | 52 / 56 |
+| athan | 55 / 65 | 53 / 55 | 51 / 64 |
+| azan | 7 / 66 | 47 / 54 | 44 / 56 |
+| ramadan | 40 / 50 | 38 / 41 | 40 / 53 |
+| prayer lock | 9 / 23 | 29 / 13 | 5 / 11 |
+| iqama | 5 / 13 | 5 / 11 | 5 / 21 |
 
-**Accurate times, wherever you are**
-• Official Awqaf prayer times bundled for every emirate in the UAE — no network needed.
-• Anywhere else in the world, times are calculated for your city via the Aladhan service.
-• Set your location automatically, or pick your emirate / city by hand.
+- The UAE and Saudi stores index only the Arabic and the English (UK) listings. They do not index en-US.
+- Add "prayer lock" only after the Screen Time lock feature ships.
+- Do not add "quran" or "qibla" until the app has these features.
 
-**A countdown you can’t miss**
-• A live countdown to the next azan, then to iqama.
-• Home Screen and Lock Screen widgets with the same countdown and the day’s schedule.
-• A Live Activity and Dynamic Island countdown so the next prayer is always in view.
+## English (en-US and en-GB)
+- **Name (19/30):** `Prayer Times: Iqama`
+- **Subtitle (15/30):** `Athan & Widgets`
+- **Keywords (94/100):** `muslim,azan,adhan,salah,namaz,salat,ramadan,reminder,alarm,islamic,fajr,masjid,dubai,uae,iftar`
+- **Promotional text:** Official UAE Awqaf times and prayer times for any city. Count down to the azan and the iqama on your Lock Screen, in the Dynamic Island, and in widgets.
 
-**Prayer Check-in**
-• Optional “did you pray?” follow-ups after iqama that keep gently asking until you confirm.
-• Commit with “Wallah, going to pray now,” or confirm afterward — then it stands down.
-• Choose which prayers to be held to, and how often it checks in.
+### Description
+Iqama shows the next prayer and counts down to the azan and the iqama. It is calm, accurate, and private.
 
-**Thoughtful details**
-• A time-of-day sky that moves with the sun and moon.
-• Custom iqama offsets per prayer, including a separate Friday setting.
-• Hijri date, and a clear view of today’s five prayers at a glance.
+ACCURATE PRAYER TIMES
+• Official Awqaf prayer times for every emirate in the UAE, built into the app. No network needed.
+• Prayer times for any city in the world, calculated with the Aladhan service.
+• Use your location, or choose your emirate or city by hand.
 
-Private by design: no account, no ads, no tracking. Location is only used to find your prayer times.
+AZAN AND IQAMA COUNTDOWN
+• A live countdown to the next azan, then to the iqama.
+• A Live Activity and the Dynamic Island keep the next prayer in view.
+• Home Screen and Lock Screen widgets show the countdown and the prayers of the day.
+• Set the iqama time for each prayer, with a separate Friday setting.
 
-## Keywords (≤100 chars, comma-separated)
-`prayer times,iqama,salah,azan,adhan,namaz,muslim,islam,UAE,Dubai,athan,prayer,qibla,ramadan`
+ATHAN WITH 12 VOICES
+• Choose the Adhan voice: Makkah, Madinah, Al-Aqsa, Alafasy, and more.
+• Turn the Adhan on or off for each prayer.
 
-## What's New (for v1.0)
-> First release on iPhone: live prayer & iqama countdown, Home/Lock Screen widgets, Dynamic Island Live Activity, and the “did you pray?” check-in.
+RAMADAN MODE
+• Count down to iftar and suhoor during Ramadan.
+• Turn on Fasting mode to use it on any day that you fast.
+
+PRAYER CHECK-IN
+• Optional "Did you pray?" reminders after the iqama, until you confirm.
+
+A CALM SKY AND SEA
+• The sky moves with the real sun and moon, and shows the real moon phase.
+• Or choose the sea screen.
+• The Hijri date and the five prayers of the day at a glance.
+
+PRIVATE
+No account, no ads, no tracking. The app uses your location only to find your prayer times.
+
+## Arabic (ar-SA)
+- **Name:** `اوقات الصلاة: إقامة`
+- **Subtitle:** `الأذان وتذكير الصلاة للمسلم`
+- **Keywords (95/100):** `اذان,صلاة,منبه,تذكير,امساكية,افطار,سحور,مسجد,المسلم,الفجر,وقت,موعد,دبي,الامارات,جمعة,هجري,العصر`
+- **Promotional text:** مواقيت الأوقاف الرسمية في الإمارات ومواقيت الصلاة لأي مدينة. عدّ تنازلي للأذان والإقامة على شاشة القفل والجزيرة الديناميكية والأدوات.
+
+### Description
+يعرض تطبيق إقامة الصلاة القادمة، ويعدّ تنازليًا حتى الأذان ثم حتى الإقامة. تطبيق هادئ ودقيق ويحترم خصوصيتك.
+
+مواقيت صلاة دقيقة
+• مواقيت الأوقاف الرسمية لكل إمارة في الإمارات، مدمجة في التطبيق ولا تحتاج إلى إنترنت.
+• مواقيت الصلاة لأي مدينة في العالم، محسوبة عبر خدمة Aladhan.
+• استخدم موقعك، أو اختر الإمارة أو المدينة يدويًا.
+
+عدّ تنازلي للأذان والإقامة
+• عدّ تنازلي مباشر حتى الأذان القادم، ثم حتى الإقامة.
+• النشاط المباشر (Live Activity) والجزيرة الديناميكية يعرضان الصلاة القادمة دائمًا.
+• أدوات للشاشة الرئيسية وشاشة القفل تعرض العدّ التنازلي وصلوات اليوم.
+• حدّد وقت الإقامة لكل صلاة، مع إعداد خاص ليوم الجمعة.
+
+الأذان بـ 12 صوتًا
+• اختر صوت الأذان: مكة، المدينة، الأقصى، العفاسي، وغيرها.
+• شغّل الأذان أو أوقفه لكل صلاة.
+
+وضع رمضان
+• عدّ تنازلي حتى الإفطار والسحور في رمضان.
+• فعّل وضع الصيام لاستخدامه في أي يوم تصومه.
+
+هل صلّيت؟
+• تذكير اختياري بعد الإقامة يسألك "هل صلّيت؟" حتى تؤكد.
+
+سماء وبحر هادئان
+• السماء تتحرك مع الشمس والقمر الحقيقيين، وتعرض طور القمر الحقيقي.
+• أو اختر شاشة البحر.
+• التاريخ الهجري وصلوات اليوم الخمس في نظرة واحدة.
+
+الخصوصية
+لا حساب، لا إعلانات، لا تتبع. يستخدم التطبيق موقعك فقط لمعرفة مواقيت الصلاة.
+
+ملاحظة: واجهة التطبيق باللغة الإنجليزية حاليًا.
 
 ## App Privacy (data collection answers)
-- **Location (Coarse Location)** — Yes, collected.
-  - Purpose: **App Functionality** (computing prayer times).
+- **Location (Coarse Location):** collected.
+  - Purpose: **App Functionality** (to calculate the prayer times).
   - Linked to the user's identity: **No**.
   - Used for tracking: **No**.
-- All other data types: **Not Collected** (no contact info, identifiers, analytics, diagnostics, purchases, usage data).
-- Reason location leaves the device: city/coordinates are sent to the Aladhan API only to calculate prayer times outside the UAE; UAE times are bundled and need no network.
+- All other data types: **Not Collected**.
+- Outside the UAE, the city or the coordinates go to the Aladhan API to calculate the prayer times. The UAE times are in the app and need no network.
 
-## Notes / decisions
-- Minimum iOS: **26.0** (the app's Liquid Glass UI uses iOS 26 APIs).
-- v1 ships **without an App Group**, so the Home Screen widget shows bundled UAE data live; non-UAE live data in the widget is a fast follow-up (needs an App Group capability). The main app and Live Activity show correct non-UAE times already.
+## Notes
+- Minimum iOS: **26.0**. iPhone only.
+- The iOS widget has no App Group in v1. It shows the bundled UAE data. The app and the Live Activity show the correct times everywhere.

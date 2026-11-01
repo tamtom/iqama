@@ -1,0 +1,78 @@
+{
+ "en-US": {
+  "01_closed": {
+   "lines": [
+    "**Prayer times**",
+    "at a glance"
+   ]
+  },
+  "02_open": {
+   "lines": [
+    "**Iqama times**",
+    "across the fold"
+   ]
+  },
+  "03_tabletop": {
+   "lines": [
+    "**Athan** countdown",
+    "in tabletop mode"
+   ]
+  },
+  "04_ramadan": {
+   "lines": [
+    "**Ramadan** iftar",
+    "and suhoor times"
+   ]
+  },
+  "05_fajr": {
+   "lines": [
+    "Never miss",
+    "the **Fajr** prayer"
+   ]
+  },
+  "06_sea": {
+   "lines": [
+    "**Salah times**",
+    "with the Sea style"
+   ]
+  }
+ },
+ "ar-SA": {
+  "01_closed": {
+   "lines": [
+    "**أوقات الصلاة**",
+    "بنظرة واحدة"
+   ]
+  },
+  "02_open": {
+   "lines": [
+    "**أوقات الإقامة**",
+    "على الشاشة كاملة"
+   ]
+  },
+  "03_tabletop": {
+   "lines": [
+    "**عدّاد الأذان**",
+    "في وضع الطاولة"
+   ]
+  },
+  "04_ramadan": {
+   "lines": [
+    "**إمساكية** رمضان",
+    "الإفطار والسحور"
+   ]
+  },
+  "05_fajr": {
+   "lines": [
+    "لا تفوّتك",
+    "صلاة **الفجر**"
+   ]
+  },
+  "06_sea": {
+   "lines": [
+    "**مواقيت الصلاة**",
+    "بنمط البحر"
+   ]
+  }
+ }
+}
